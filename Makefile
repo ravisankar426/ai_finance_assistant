@@ -27,4 +27,4 @@ models:         ## live: list models + smoke-test every role (needs keys in .env
 	uv run python scripts/check_models.py --list
 
 requirements:   ## regenerate requirements.txt from uv.lock
-	uv export --format requirements-txt --no-hashes --no-dev --no-emit-project -o requirements.txt
+	uv export --format requirements-txt --no-hashes --no-dev --no-emit-project --no-header -o requirements.txt

@@ -40,5 +40,5 @@ jobs:
 
       - name: requirements.txt is in sync with uv.lock (REQ-DEL-03)
         run: |
-          uv export --format requirements-txt --no-hashes --no-dev --no-emit-project -o /tmp/req.txt
+          uv export --format requirements-txt --no-hashes --no-dev --no-emit-project --no-header -o /tmp/req.txt
           diff -u requirements.txt /tmp/req.txt
