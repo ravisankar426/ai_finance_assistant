@@ -1,0 +1,40 @@
+# AI Finance Assistant — non-secret configuration.
+# Secrets (API keys) live in .env, never here.
+# Any value can be overridden by an env var using "__" for nesting, e.g.
+#   LLM__ROLES__AGENT__MODEL=gpt-4.1   APP__LOG_LEVEL=DEBUG
+
+app:
+  name: ai-finance-assistant
+  env: dev                 # dev | test | prod
+  log_level: INFO
+  log_format: console      # console (human-readable) | json (production)
+
+llm:
+  # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).
+  # Model IDs: confirm against your keys with `uv run python scripts/check_models.py`.
+  roles:
+    router:      { provider: openai,       model: gpt-4.1-nano,     temperature: 0.0, timeout_s: 10, max_retries: 2 }
+    guard:       { provider: openai,       model: gpt-4.1-nano,     temperature: 0.0, timeout_s: 10, max_retries: 2 }
+    agent:       { provider: openai,       model: gpt-4.1-mini,     temperature: 0.2, timeout_s: 30, max_retries: 2 }
+    synthesizer: { provider: openai,       model: gpt-4.1-mini,     temperature: 0.2, timeout_s: 30, max_retries: 2 }
+    # Gemini 3.x: temperature left at the provider default (1.0), per Google's Gemini 3 guide —
+    # lower values can cause looping/degraded output on these models.
+    # Judge = 3.5 Flash: it "thinks" (~10x output tokens, ~3 s) which helps grading; latency is
+    # irrelevant offline. gemini-3.8-flash was tested 2026-10-06: repeated 503/504 (capacity).
+    judge:       { provider: google_genai, model: gemini-3.5-flash, timeout_s: 60, max_retries: 3 }
+
+  # Cross-provider fallback used when a primary call fails after retries (REQ-LLM-03).
+  # 3.5 Flash-Lite: ~1 s, minimal thinking — close to the primary's latency (measured 2026-10-06).
+  # Pinned to an explicit version, not "gemini-flash-lite-latest": aliases change behavior silently.
+  fallback:      { provider: google_genai, model: gemini-3.5-flash-lite, timeout_s: 30, max_retries: 1 }
+  fallback_exempt_roles: [judge]   # the judge must stay independent of the generator
+
+  embeddings:    { provider: openai, model: text-embedding-3-small }
+
+  # USD per 1M tokens, used for cost tracking (REQ-LLM-04). Re-check provider pricing pages.
+  pricing:
+    gpt-4.1-nano:           { input: 0.10, output: 0.40 }
+    gpt-4.1-mini:           { input: 0.40, output: 1.60 }
+    gemini-3.5-flash:       { input: 1.50, output: 9.00 }   # output includes thinking tokens
+    gemini-3.5-flash-lite:  { input: 0.30, output: 2.50 }
+    text-embedding-3-small: { input: 0.02, output: 0.0 }

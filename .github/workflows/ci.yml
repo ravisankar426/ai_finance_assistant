@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies (locked)
+        run: uv sync --locked
+
+      - name: Lint
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Type check
+        run: uv run mypy
+
+      - name: Tests + coverage gate (REQ-NFR-01)
+        run: uv run pytest -m "not live and not judge" --cov --cov-report=term-missing
+
+      - name: Requirement traceability (report; --strict from Day 9)
+        run: uv run python scripts/trace_matrix.py
+
+      - name: requirements.txt is in sync with uv.lock (REQ-DEL-03)
+        run: |
+          uv export --format requirements-txt --no-hashes --no-dev --no-emit-project -o /tmp/req.txt
+          diff -u requirements.txt /tmp/req.txt

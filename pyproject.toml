@@ -1,0 +1,96 @@
+[project]
+name = "ai-finance-assistant"
+version = "0.1.0"
+description = "Multi-agent AI assistant for personal-finance education (LangGraph + RAG + live market data)"
+authors = [
+    { name = "ravisankar-uppu", email = "ravisankar_uppu@yahoo.co.in" }
+]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "langchain>=1.4.3",
+    "langchain-core>=1.6.6",
+    "langchain-google-genai>=4.4.0",
+    "langchain-openai>=1.6.7",
+    "pydantic>=2.13.5",
+    "pydantic-settings>=2.15.0",
+    "pyyaml>=6.0.3",
+    "structlog>=26.1.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
+
+# The brief prescribes src/{agents,core,...} directly under src/, so `src` itself is the
+# importable package: `from src.core.config import get_settings`.
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["specs"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle + pyflakes
+    "I",             # import sorting
+    "B",             # bugbear: likely bugs
+    "UP",            # modern syntax
+    "SIM",           # simplifications
+    "S",             # bandit security checks
+    "D",             # docstrings (REQ-NFR-10)
+    "RUF",
+]
+ignore = [
+    "D105", "D107",  # magic methods / __init__ docstrings
+    "D203", "D213",  # conflicting docstring styles: use D211 + D212
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "D100", "D101", "D102", "D103", "D104"]  # asserts fine; test names are the docs
+"scripts/**" = ["D103", "T201"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["src"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["langchain.*", "langchain_core.*", "langchain_openai.*", "langchain_google_genai.*"]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+markers = [
+    "live: calls real external APIs (needs keys); deselected by default in CI",
+    "judge: LLM-as-judge evals (needs keys)",
+]
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.4.0",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.10",
+    "types-pyyaml>=6.0.12.20260906",
+]
