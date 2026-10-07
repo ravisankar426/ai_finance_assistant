@@ -28,6 +28,7 @@ from langgraph.types import Send
 from src.agents.base import Agent, run_safely
 from src.agents.placeholder import PlaceholderAgent
 from src.agents.qa import QAAgent
+from src.agents.tax import TaxAgent
 from src.core.config import Settings, get_settings
 from src.core.guards import OUT_OF_SCOPE_REPLY, redact_user_text, with_disclaimer
 from src.core.llm import get_chat_model, get_embeddings
@@ -214,12 +215,9 @@ def build_default_graph(settings: Settings | None = None) -> CompiledStateGraph[
         min_keyword_coverage=rag.min_keyword_coverage,
     )
     agents: dict[str, Agent] = {name: PlaceholderAgent(name) for name in AGENT_NAMES}
-    agents["qa"] = QAAgent(
-        get_chat_model("agent", settings=settings),
-        retriever,
-        top_k=settings.rag.top_k,
-        history_messages=history,
-    )
+    agent_model = get_chat_model("agent", settings=settings)
+    for name, cls in (("qa", QAAgent), ("tax", TaxAgent)):
+        agents[name] = cls(agent_model, retriever, top_k=rag.top_k, history_messages=history)
     router = Router(
         get_chat_model("router", structured_output=RouteDecision, settings=settings),
         history_messages=history,

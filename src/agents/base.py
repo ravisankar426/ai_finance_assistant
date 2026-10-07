@@ -4,7 +4,8 @@ An agent turns an :class:`AgentInput` into an :class:`AgentResult`. ``run_safely
 graph-level guarantees so individual agents don't have to:
 - an agent crash becomes ``AgentResult(error=...)`` and the other agents' answers still reach
   the user (REQ-WF-05);
-- configuration errors are re-raised, never swallowed (REQ-LLM-07).
+- configuration errors (LLM or our own, e.g. a bad market-data key) are re-raised, never
+  swallowed (REQ-LLM-07).
 """
 
 from __future__ import annotations
@@ -12,12 +13,16 @@ from __future__ import annotations
 import time
 from typing import Protocol
 
+from src.core.errors import ConfigurationError
 from src.core.llm import CONFIG_ERRORS
 from src.core.models import AGENT_LABELS, AgentResult
 from src.utils.logging import get_logger
 from src.workflow.state import AgentInput
 
 log = get_logger(__name__)
+
+# Never degrade on these: they mean misconfiguration, which must fail loud.
+FAIL_LOUD: tuple[type[BaseException], ...] = (*CONFIG_ERRORS, ConfigurationError)
 
 
 class Agent(Protocol):
@@ -35,7 +40,7 @@ def run_safely(agent: Agent, inp: AgentInput) -> AgentResult:
     start = time.perf_counter()
     try:
         result = agent.run(inp)
-    except CONFIG_ERRORS:
+    except FAIL_LOUD:
         raise
     except Exception as exc:
         log.exception("agent_failed", agent=agent.name, error_type=type(exc).__name__)

@@ -47,6 +47,9 @@ def render_turn(turn: dict[str, Any]) -> None:
             with st.expander(f"Sources ({len(turn['citations'])})"):
                 for c in turn["citations"]:
                     st.markdown(f"- [{c['title']}]({c['url']}) · _{c['category']}_")
+        if turn.get("learn_next"):
+            links = " · ".join(f"[{a['title']}]({a['url']})" for a in turn["learn_next"])
+            st.caption(f"📚 Learn next: {links}")
 
 
 def ask(graph: Any, question: str, profile: UserProfile) -> dict[str, Any]:
@@ -81,6 +84,9 @@ def ask(graph: Any, question: str, profile: UserProfile) -> dict[str, Any]:
         "content": final.get("final_answer", "Sorry, something went wrong."),
         "agents": agents,
         "citations": [c.model_dump() for c in final.get("citations", [])],
+        "learn_next": [
+            a for r in final.get("agent_results", []) for a in r.data.get("learn_next", [])
+        ][:3],
     }
 
 

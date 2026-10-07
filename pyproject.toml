@@ -20,6 +20,7 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "streamlit>=1.65.0",
     "structlog>=26.1.0",
+    "yfinance>=1.7.0",
 ]
 
 [build-system]
@@ -66,7 +67,7 @@ packages = ["src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["langchain.*", "langchain_core.*", "langchain_openai.*", "langchain_google_genai.*", "rank_bm25.*"]
+module = ["langchain.*", "langchain_core.*", "langchain_openai.*", "langchain_google_genai.*", "rank_bm25.*", "yfinance.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------- pytest

@@ -9,7 +9,7 @@ from langchain_core.exceptions import ModelAPIError, ModelAuthenticationError
 from langchain_core.messages import AIMessage, HumanMessage
 from structlog.testing import capture_logs
 
-from src.workflow.router import RouteDecision, Router, keyword_route
+from src.workflow.router import RouteDecision, Router, apply_tax_guard, keyword_route
 from tests.fakes import ScriptedChatModel, route_json, seen_text
 
 CASES: list[dict[str, Any]] = yaml.safe_load(
@@ -111,3 +111,28 @@ def test_live_llm_router_accuracy() -> None:
             misses.append((case["text"], case["expected"], intents))
     accuracy = 1 - len(misses) / len(CASES)
     assert accuracy >= 0.9, f"accuracy {accuracy:.0%}; misses: {misses}"
+
+
+@pytest.mark.parametrize(
+    ("intents", "text", "expected", "changed"),
+    [
+        (["qa"], "How does the wash sale rule work?", ["tax"], True),
+        (["goals"], "Should I max my 401(k) to retire early?", ["goals", "tax"], True),
+        (["out_of_scope"], "Is my Roth IRA taxed?", ["tax"], True),
+        (["tax", "qa"], "Roth IRA basics", ["tax", "qa"], False),  # LLM already chose tax
+        (["qa"], "What is an index fund?", ["qa"], False),  # no tax terms
+        (["market"], "What's AAPL trading at?", ["market"], False),
+    ],
+)
+def test_tax_guard(intents: list[str], text: str, expected: list[str], changed: bool) -> None:
+    """REQ-WF-01, REQ-TX-01: precise tax terms always reach the Tax agent."""
+    assert apply_tax_guard(intents, text) == (expected, changed)  # type: ignore[arg-type]
+
+
+def test_router_applies_tax_guard_to_llm_decision() -> None:
+    """REQ-TX-01: an LLM mis-route of a tax question is corrected and logged."""
+    router, _ = _router(route_json(["qa"], "How does the wash sale rule work?"))
+    with capture_logs() as logs:
+        out = router(_state("How does the wash sale rule work?"))
+    assert out["intents"] == ["tax"]
+    assert next(e for e in logs if e["event"] == "router_decision")["tax_guard"] is True

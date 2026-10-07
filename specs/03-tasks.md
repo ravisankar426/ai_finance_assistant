@@ -37,10 +37,10 @@ and you can answer that day's checkpoint questions.
 **Your job today:** spot-check the tax articles' figures against IRS.gov (≈45 min).
 
 ## Day 4 — Thu Oct 8 · Q&A + Tax agents, market data layer
-| T4.1 | Base agent contract (check inputs → compute → retrieve → explain), `safe_node` wrapper, QA agent with citations + "learn next" | QA-01..03, WF-05, WF-09, WF-10 |
-| T4.2 | Tax agent (category-filtered RAG, tax-year + pro referral) | TX-01..03 |
-| T4.3 | Provider interface, yfinance + Alpha Vantage providers, Pydantic normalization | MD-01, MD-07 |
-| T4.4 | TTL cache, rate limiter, retry, circuit breaker, stale fallback | MD-02..06 |
+| T4.1 | ✅ Base agent contract (check inputs → compute → retrieve → explain), `safe_node` wrapper, QA agent with citations + "learn next" | QA-01..03, WF-05, WF-09, WF-10 |
+| T4.2 | ✅ Tax agent (category-filtered RAG, tax-year + pro referral) | TX-01..03 |
+| T4.3 | ✅ Provider interface, yfinance + Alpha Vantage providers, Pydantic normalization | MD-01, MD-07 |
+| T4.4 | ✅ TTL cache, rate limiter, retry, circuit breaker, stale fallback | MD-02..06 |
 **Learn:** resilience patterns (retry, backoff, jitter, circuit breaker, bulkhead), caching TTL strategy.
 
 ## Day 5 — Fri Oct 9 · Market + News agents

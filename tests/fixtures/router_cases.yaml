@@ -33,6 +33,7 @@
 - {text: "What is AAPL's 50-day moving average right now?", expected: [market]}
 - {text: "What is the 401(k) contribution limit?", expected: [tax], forbidden: [qa]}
 - {text: "How are qualified dividends taxed?", expected: [tax], forbidden: [qa]}
+- {text: "How does the wash sale rule work?", expected: [tax], forbidden: [qa]}
 - {text: "Give me a lasagna recipe", expected: [out_of_scope]}
 - {text: "Write a Python function to sort a list", expected: [out_of_scope]}
 - {text: "Who won the football game last night?", expected: [out_of_scope]}

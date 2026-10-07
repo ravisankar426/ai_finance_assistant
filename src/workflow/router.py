@@ -100,6 +100,27 @@ _KEYWORD_RULES: list[tuple[Intent, re.Pattern[str]]] = [
 ]
 
 
+_TAX_PATTERN = _KEYWORD_RULES[0][1]
+
+
+def apply_tax_guard(intents: list[Intent], *texts: str) -> tuple[list[Intent], bool]:
+    """Deterministic safety net: precise tax terms always reach the Tax agent.
+
+    The LLM is good at meaning but sensitive to phrasing ("How does the wash sale rule work?"
+    was once routed to qa). Tax vocabulary is precise, so a regex is reliable here. If it
+    matches and the LLM didn't pick "tax", replace "qa" with "tax" (the QA agent excludes tax
+    articles) or add "tax" alongside the other intents.
+    """
+    if "tax" in intents or not any(_TAX_PATTERN.search(t.lower()) for t in texts):
+        return intents, False
+    if intents == ["out_of_scope"]:
+        return ["tax"], True
+    fixed: list[Intent] = ["tax" if i == "qa" else i for i in intents]
+    if "tax" not in fixed:
+        fixed.append("tax")
+    return list(dict.fromkeys(fixed)), True
+
+
 def keyword_route(text: str) -> RouteDecision:
     """Deterministic fallback router: every matching rule, else ``qa``."""
     lowered = text.lower()
@@ -133,13 +154,16 @@ class Router:
         intents = list(dict.fromkeys(decision.intents))  # dedupe, keep order
         if len(intents) > 1 and "out_of_scope" in intents:
             intents.remove("out_of_scope")  # a real question wins over "out of scope"
+        question = decision.standalone_question or latest
+        intents, overridden = apply_tax_guard(intents, latest, question)
         log.info(
             "router_decision",
             intents=intents,
             method=method,
+            tax_guard=overridden,
             latency_ms=round((time.perf_counter() - start) * 1000),
         )
-        return {"intents": intents, "question": decision.standalone_question or latest}
+        return {"intents": intents, "question": question}
 
     def _prompt(self, messages: Sequence[AnyMessage]) -> list[AnyMessage]:
         history = list(messages[-(self.history_messages + 1) : -1])

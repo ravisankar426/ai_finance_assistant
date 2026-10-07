@@ -25,10 +25,14 @@ from src.utils.logging import get_logger
 
 log = get_logger(__name__)
 
+# Bump when the saved chunk format changes, so old indexes are rebuilt automatically.
+INDEX_SCHEMA_VERSION = 2
+
 
 def fingerprint(articles: Sequence[Article], embedding_model: str, cfg: RAGConfig) -> str:
     """Hash of everything that determines the index contents."""
     payload = {
+        "schema": INDEX_SCHEMA_VERSION,
         "model": embedding_model,
         "chunking": [cfg.chunk_max_words, cfg.chunk_overlap_words],
         "articles": sorted((a.id, a.model_dump_json()) for a in articles),

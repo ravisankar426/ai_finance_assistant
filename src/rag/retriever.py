@@ -52,6 +52,8 @@ class RetrievedChunk:
     text: str
     score: float  # cosine similarity (normal mode) or keyword coverage (degraded mode)
     degraded: bool = False
+    difficulty: str = "beginner"
+    tax_year: int | None = None
 
     def citation(self) -> Citation:
         """Return the source attribution for this chunk."""
@@ -187,4 +189,6 @@ class HybridRetriever:
             text=c.text,
             score=round(score, 4),
             degraded=degraded,
+            difficulty=c.difficulty,
+            tax_year=c.tax_year,
         )

@@ -29,6 +29,8 @@ class Chunk:
     url: str
     section: str
     text: str  # what the agent reads and the user may see
+    difficulty: str = "beginner"
+    tax_year: int | None = None  # set for articles with year-specific figures (REQ-TX-02)
 
     @property
     def embedding_text(self) -> str:
@@ -79,6 +81,8 @@ def chunk_article(
                     url=article.source_url,
                     section=heading,
                     text=piece,
+                    difficulty=article.difficulty,
+                    tax_year=article.tax_year,
                 )
             )
     return chunks

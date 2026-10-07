@@ -124,6 +124,47 @@ class RAGConfig(BaseModel):
         return self
 
 
+class RateLimit(BaseModel):
+    """At most ``max_calls`` per ``period_s`` seconds (sliding window)."""
+
+    max_calls: int = Field(ge=1)
+    period_s: float = Field(gt=0)
+
+
+ProviderName = Literal["yfinance", "alphavantage"]
+_DEFAULT_PROVIDERS: tuple[ProviderName, ...] = ("yfinance", "alphavantage")
+
+
+class MarketConfig(BaseModel):
+    """Market-data providers and resilience settings (REQ-MD-01..07)."""
+
+    providers: list[ProviderName] = Field(default_factory=lambda: list(_DEFAULT_PROVIDERS))
+    request_timeout_s: float = Field(default=10, gt=0)
+    # Cache freshness per data type (REQ-MD-02). Stale entries are kept for fallback (REQ-MD-06).
+    ttl_quote_s: float = Field(default=60, gt=0)
+    ttl_history_s: float = Field(default=6 * 3600, gt=0)
+    ttl_profile_s: float = Field(default=24 * 3600, gt=0)
+    ttl_news_s: float = Field(default=15 * 60, gt=0)
+    # Retries with exponential backoff + jitter for transient errors (REQ-MD-04).
+    retry_attempts: int = Field(default=3, ge=1)
+    retry_base_delay_s: float = Field(default=0.5, ge=0)
+    retry_max_delay_s: float = Field(default=4.0, ge=0)
+    # Circuit breaker (REQ-MD-05).
+    breaker_failure_threshold: int = Field(default=5, ge=1)
+    breaker_reset_s: float = Field(default=60, gt=0)
+    # Client-side rate limits per provider (REQ-MD-03).
+    rate_limits: dict[str, list[RateLimit]] = Field(
+        default_factory=lambda: {
+            "yfinance": [RateLimit(max_calls=60, period_s=60)],
+            "alphavantage": [
+                RateLimit(max_calls=1, period_s=1.1),
+                RateLimit(max_calls=25, period_s=86400),
+            ],
+        }
+    )
+    history_days: int = Field(default=365, ge=30)
+
+
 class Settings(BaseSettings):
     """Root settings object. Get it via :func:`get_settings`."""
 
@@ -137,6 +178,7 @@ class Settings(BaseSettings):
     llm: LLMConfig
     workflow: WorkflowConfig = Field(default_factory=WorkflowConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
+    market: MarketConfig = Field(default_factory=MarketConfig)
 
     # Secrets — env/.env only. SecretStr keeps them out of repr() and logs.
     openai_api_key: SecretStr | None = None

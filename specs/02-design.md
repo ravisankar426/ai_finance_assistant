@@ -59,7 +59,8 @@ the prescribed structure. The repo root folder is named `ai_finance_assistant/`,
 | ADR-06 | **FAISS** (`IndexFlatIP` on normalized vectors = exact cosine search) used **directly**: index saved with `faiss.write_index`, chunk metadata as JSON (no pickle). Category filtering = mask over chunk metadata | LangChain's FAISS wrapper → saves its docstore with pickle (`allow_dangerous_deserialization`), a code-execution risk if an index file is ever tampered with; direct FAISS + JSON removes the risk and a dependency. Chroma → heavier dependency and its own storage format. Pinecone → network + account for ~300 chunks. IVF/HNSW → approximate search only pays off around 100k+ vectors; exact search here is sub-millisecond |
 | ADR-14 | LLM-as-judge runs on **Gemini** (a different provider from the OpenAI generator) | Same model as judge → self-preference bias (models rate their own outputs higher). Human grading → too slow to repeat on every change |
 | ADR-07 | Hybrid BM25 + vector with RRF (k=60) | Vector-only → misses exact terms like "401(k)", "wash sale" |
-| ADR-08 | yfinance primary, Alpha Vantage fallback | Either alone → yfinance is unofficial and can break; AV free tier is tiny |
+| ADR-08 | yfinance primary, Alpha Vantage fallback, behind one `MarketDataProvider` interface. Measured 2026-10-07: AV free tier = 1 req/s + 25/day, throttling returned as **HTTP 200** + `Information`, OVERVIEW and full history are premium (fallback covers quotes + last 100 trading days, unadjusted) | Either alone → yfinance is unofficial and breaks without notice; AV free tier is tiny |
+| ADR-15 | Retry, rate limiter, circuit breaker, and TTL cache are small in-house classes (`data/resilience.py`) with injectable clocks | `tenacity`/`cachetools`/`pybreaker` → three dependencies for ~150 lines, and harder to make deterministic in tests; the in-house versions run instantly under a fake clock |
 | ADR-09 | In-process TTL cache (`cachetools`) behind a `Cache` protocol | Redis → extra infrastructure; can be swapped in later |
 | ADR-10 | FastAPI service + Streamlit client | Streamlit-only → no API to document, logic duplicated for MCP |
 | ADR-11 | LangGraph `MemorySaver` in dev, `SqliteSaver` by config | Postgres → overkill for MVP |
@@ -167,12 +168,41 @@ to multiple workers means changing config to use `PostgresSaver` and Redis, with
 because both sit behind interfaces (P6). For the MVP, the concurrency benchmark (REQ-NFR-09)
 confirms that sessions stay isolated.
 
-## 8. Resilience (`data/resilience.py`)
+## 8. Market data and resilience (`data/`)
 
-Order of a provider call: validate ticker → cache hit? → circuit open? skip → rate-limit
-acquire → call with retry (`tenacity`, exponential backoff + jitter) → on success cache + reset breaker
-→ on final failure record breaker failure → try next provider → all failed → stale cache
-(flag `stale=True`) → else raise `MarketDataUnavailable`.
+```
+get_quote("$aapl")
+  └─ normalize_ticker  → "AAPL" (format check before any network call; REQ-MD-07)
+  └─ cache fresh?      → return (TTL: quote 60 s, history 6 h, profile 24 h; REQ-MD-02)
+  └─ for provider in [yfinance, alphavantage]:
+        breaker open?      → skip (5 consecutive failures → 60 s cool-down → half-open probe; REQ-MD-05)
+        local rate limit?  → skip, don't wait (AV: 1 call/1.1 s and 25/day; REQ-MD-03)
+        call with retry    → transient errors only, exponential backoff + full jitter, 3 attempts (REQ-MD-04)
+          ok                   → cache, close breaker, return
+          transient (final)    → breaker failure, next provider
+          no data / unsupported → next provider, no breaker penalty
+          ConfigurationError   → raise (bad key fails loud)
+  └─ all failed: stale cache → return flagged `stale=True` (REQ-MD-06, REQ-MK-04)
+                 every answering provider said "no data" → InvalidTickerError
+                 otherwise → MarketDataUnavailableError
+```
+
+**Provider error categories** (`providers/base.py`) decide everything above: `TransientProviderError`
+(retry, counts toward the breaker), `RateLimitedError` (a transient subclass), `NoDataError` and
+`UnsupportedOperationError` (move on, no penalty), `ConfigurationError` (fail loud).
+
+**Normalization quirks handled by the adapters (all observed live):**
+- yfinance returns an *empty* frame for unknown tickers, and also during Yahoo outages → `NoDataError`,
+  never "invalid ticker" on its own; the ticker is only called invalid when **every** provider that
+  answered says "no data".
+- Yahoo sector names → GICS names ("Technology" → "Information Technology"); ETFs have no sector.
+- Alpha Vantage throttling messages *also* mention "premium plans": classify rate-limit wording first,
+  then the specific "premium endpoint/feature" phrases (a recorded-fixture test caught the mis-ordering).
+- Alpha Vantage history is unadjusted (`adjusted=False`) and ≤ 100 trading days.
+
+All resilience classes take an injectable clock/sleep, so the tests (breaker cool-downs, daily quotas,
+backoff) run instantly. Limits are per process: with several workers, the cache and quota counters would
+move to Redis (design 7b).
 
 ## 8a. LLM gateway (`core/llm.py`)
 

@@ -39,6 +39,9 @@ def main() -> None:
         print(f"\nassistant> {out['final_answer']}")
         for c in out.get("citations", []):
             print(f"   source: {c.title} — {c.url}")
+        for r in out.get("agent_results", []):
+            for a in r.data.get("learn_next", []):
+                print(f"   learn next: {a['title']}")
         print(
             f"   [{', '.join(out['intents'])}] {time.perf_counter() - start:.1f}s, "
             f"{usage.calls} LLM calls, ${usage.cost_usd:.5f}"

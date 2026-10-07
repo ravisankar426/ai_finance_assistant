@@ -24,6 +24,26 @@ rag:
   min_cosine: 0.3          # vector-similarity gate: below -> "not covered" (calibrated on the eval set)
   min_keyword_coverage: 0.5  # gate used only when embeddings are down (BM25-only mode)
 
+market:
+  providers: [yfinance, alphavantage]   # tried in order (REQ-MD-01)
+  request_timeout_s: 10
+  ttl_quote_s: 60            # cache freshness (REQ-MD-02); stale copies kept for fallback (REQ-MD-06)
+  ttl_history_s: 21600       # 6 h
+  ttl_profile_s: 86400       # 24 h
+  ttl_news_s: 900            # 15 min
+  retry_attempts: 3          # transient errors only, exponential backoff + jitter (REQ-MD-04)
+  retry_base_delay_s: 0.5
+  retry_max_delay_s: 4.0
+  breaker_failure_threshold: 5   # consecutive failures before skipping a provider (REQ-MD-05)
+  breaker_reset_s: 60
+  rate_limits:               # client-side (REQ-MD-03)
+    yfinance:
+      - {max_calls: 60, period_s: 60}
+    alphavantage:            # free tier, measured 2026-10-07: 1 request/second and 25/day
+      - {max_calls: 1, period_s: 1.1}
+      - {max_calls: 25, period_s: 86400}
+  history_days: 365
+
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).
   # Model IDs: confirm against your keys with `uv run python scripts/check_models.py`.
