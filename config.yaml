@@ -43,6 +43,7 @@ market:
       - {max_calls: 1, period_s: 1.1}
       - {max_calls: 25, period_s: 86400}
   history_days: 365
+  rate_limit_max_wait_s: 2.0   # wait briefly for a slot (AV 1/s); skip if longer (daily quota)
 
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).

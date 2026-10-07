@@ -111,7 +111,7 @@ class MarketDataService:
             if not breaker.allow():
                 outcomes[name] = "circuit_open"
                 continue
-            if not self.limiters[name].try_acquire():
+            if not self._acquire_slot(name):
                 outcomes[name] = "rate_limited_locally"
                 continue
             start = time.perf_counter()
@@ -151,6 +151,18 @@ class MarketDataService:
                 )
                 return value
         return cast(M, self._fallback(kind, ticker, key, outcomes))
+
+    def _acquire_slot(self, name: str) -> bool:
+        """Take a rate-limit slot, waiting briefly if one frees up soon (REQ-MD-03)."""
+        limiter = self.limiters[name]
+        if limiter.try_acquire():
+            return True
+        wait = limiter.wait_time()
+        if wait > self.config.rate_limit_max_wait_s:
+            return False  # e.g. daily quota used up: don't make the user wait hours
+        log.debug("market_rate_limit_wait", provider=name, wait_s=round(wait, 2))
+        self.sleep(wait)
+        return limiter.try_acquire()
 
     def _fallback(self, kind: str, ticker: str, key: Any, outcomes: dict[str, str]) -> Any:
         stale = self.cache.get_any(key)

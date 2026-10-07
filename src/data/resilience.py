@@ -68,8 +68,8 @@ class TTLCache:
 class RateLimiter:
     """Sliding-window limits, e.g. [1 call / 1.1 s, 25 calls / day] (REQ-MD-03).
 
-    Non-blocking: ``try_acquire`` returns False instead of waiting, so a user-facing request can
-    move on to the next provider (or stale cache) rather than hang.
+    ``try_acquire`` never blocks. ``wait_time`` tells the caller how long until a slot frees, so
+    it can choose: wait briefly (1 call/second limits) or move on (daily quota exhausted).
     """
 
     def __init__(
@@ -90,6 +90,17 @@ class RateLimiter:
                 return False
         self._calls.append(now)
         return True
+
+    def wait_time(self) -> float:
+        """Seconds until ``try_acquire`` would succeed (0 if it would succeed now)."""
+        now = self.clock()
+        wait = 0.0
+        for max_calls, period in self.limits:
+            in_window = [t for t in self._calls if now - t < period]
+            if len(in_window) >= max_calls:
+                oldest_blocking = in_window[len(in_window) - max_calls]
+                wait = max(wait, period - (now - oldest_blocking))
+        return wait
 
 
 # --- circuit breaker --------------------------------------------------------------------------

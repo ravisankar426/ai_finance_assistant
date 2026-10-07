@@ -163,6 +163,9 @@ class MarketConfig(BaseModel):
         }
     )
     history_days: int = Field(default=365, ge=30)
+    # Wait up to this long for a rate-limit slot (e.g. AV's 1/s) before trying the next provider;
+    # longer waits (daily quota exhausted) skip immediately.
+    rate_limit_max_wait_s: float = Field(default=2.0, ge=0)
 
 
 class Settings(BaseSettings):

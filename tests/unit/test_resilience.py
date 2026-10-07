@@ -170,3 +170,15 @@ def test_retry_delay_respects_max() -> None:
     with pytest.raises(TransientProviderError):
         retry(down, attempts=6, base_delay_s=1, max_delay_s=2, sleep=delays.append)
     assert max(delays) <= 2
+
+
+def test_rate_limiter_reports_wait_time() -> None:
+    """REQ-MD-03: callers learn how long until a slot frees, per window."""
+    clock = FakeClock()
+    limiter = RateLimiter([(1, 1.1), (2, 100)], clock=clock)
+    assert limiter.wait_time() == 0
+    assert limiter.try_acquire()
+    assert limiter.wait_time() == pytest.approx(1.1)
+    clock.advance(1.2)
+    assert limiter.try_acquire()
+    assert limiter.wait_time() == pytest.approx(100 - 1.2)  # daily-style window dominates

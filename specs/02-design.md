@@ -176,7 +176,7 @@ get_quote("$aapl")
   └─ cache fresh?      → return (TTL: quote 60 s, history 6 h, profile 24 h; REQ-MD-02)
   └─ for provider in [yfinance, alphavantage]:
         breaker open?      → skip (5 consecutive failures → 60 s cool-down → half-open probe; REQ-MD-05)
-        local rate limit?  → skip, don't wait (AV: 1 call/1.1 s and 25/day; REQ-MD-03)
+        local rate limit?  → wait if a slot frees within 2 s (AV 1 call/1.1 s), else skip (25/day used up; REQ-MD-03)
         call with retry    → transient errors only, exponential backoff + full jitter, 3 attempts (REQ-MD-04)
           ok                   → cache, close breaker, return
           transient (final)    → breaker failure, next provider

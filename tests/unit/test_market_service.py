@@ -225,3 +225,37 @@ def test_build_market_service_with_key(settings: Settings, monkeypatch: pytest.M
         "yfinance",
         "alphavantage",
     ]
+
+
+def test_short_rate_limit_waits_instead_of_failing() -> None:
+    """REQ-MD-03: a 1-call-per-second provider is waited on briefly, not skipped.
+
+    Found by functional testing: with Yahoo down, quote + history back-to-back failed because
+    Alpha Vantage's 1/s limit made the service skip it.
+    """
+    clock = FakeClock()
+    backup = FakeProvider("b")
+    config = MarketConfig(
+        rate_limits={"b": [RateLimit(max_calls=1, period_s=1.1)]}, rate_limit_max_wait_s=2.0
+    )
+    svc = MarketDataService(
+        [FakeProvider("p", "down"), backup], config, clock=clock, sleep=clock.advance
+    )
+    assert svc.get_quote("AAPL").source == "b"
+    assert svc.get_history("AAPL").source == "b"  # waited ~1.1 s on the fake clock
+    assert backup.calls == 2
+
+
+def test_long_rate_limit_wait_is_skipped() -> None:
+    """REQ-MD-03: an exhausted daily quota is not waited on."""
+    clock = FakeClock()
+    waits: list[float] = []
+    config = MarketConfig(
+        rate_limits={"p": [RateLimit(max_calls=1, period_s=86400)]}, rate_limit_max_wait_s=2.0
+    )
+    svc = MarketDataService(
+        [FakeProvider("p"), FakeProvider("b")], config, clock=clock, sleep=waits.append
+    )
+    svc.get_quote("AAA")
+    assert svc.get_quote("BBB").source == "b"
+    assert waits == []
