@@ -1,0 +1,13 @@
+{
+ "ticker": "XLRE",
+ "price": 40.57,
+ "previous_close": 41.1,
+ "change": -0.53,
+ "change_pct": -1.2895,
+ "volume": 9192902,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:46.128673Z",
+ "source": "yfinance",
+ "stale": false
+}

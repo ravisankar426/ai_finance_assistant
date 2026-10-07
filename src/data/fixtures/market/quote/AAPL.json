@@ -1,0 +1,13 @@
+{
+ "ticker": "AAPL",
+ "price": 336.67,
+ "previous_close": 333.63,
+ "change": 3.04,
+ "change_pct": 0.9112,
+ "volume": 33380854,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:28.032438Z",
+ "source": "yfinance",
+ "stale": false
+}

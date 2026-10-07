@@ -1,0 +1,13 @@
+{
+ "ticker": "XLE",
+ "price": 63.36,
+ "previous_close": 63.75,
+ "change": -0.39,
+ "change_pct": -0.6118,
+ "volume": 26195130,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:42.971443Z",
+ "source": "yfinance",
+ "stale": false
+}

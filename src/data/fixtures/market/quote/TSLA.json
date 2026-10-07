@@ -1,0 +1,13 @@
+{
+ "ticker": "TSLA",
+ "price": 377.81,
+ "previous_close": 380.68,
+ "change": -2.87,
+ "change_pct": -0.7539,
+ "volume": 25496215,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:31.607560Z",
+ "source": "yfinance",
+ "stale": false
+}

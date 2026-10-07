@@ -200,5 +200,19 @@ def test_build_default_graph_wires_real_parts(
     settings.rag = rag_config(tmp_path)
     graph = graph_module.build_default_graph(settings)
     assert (tmp_path / "index" / "index.faiss").exists()  # built and saved at startup
-    assert sorted(built) == ["agent", "router"]
+    assert sorted(built) == ["agent", "router", "router"]  # router + ticker extractor
     assert _ask(graph, "What is an index fund?")["final_answer"].startswith("Answer [1].")
+
+
+def test_follow_up_question_reaches_the_user(settings: Settings) -> None:
+    """REQ-WF-10: an agent's follow-up question is shown even with no other answer text."""
+
+    class Asks:
+        name = "market"
+
+        def run(self, inp: AgentInput) -> AgentResult:
+            return AgentResult(agent="market", follow_up_question="Which ticker?")
+
+    graph, _, _ = make_graph(settings, intents=["market"], extra_agents={"market": Asks()})
+    out = _ask(graph, "What's the stock price?")
+    assert "**Quick question:** Which ticker?" in out["final_answer"]

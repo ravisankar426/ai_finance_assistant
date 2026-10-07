@@ -1,0 +1,11 @@
+{
+ "ticker": "VTI",
+ "name": "Vanguard Morningstar Total Stock Market ETF",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:35.304383Z",
+ "source": "yfinance",
+ "stale": false
+}

@@ -18,7 +18,7 @@ import re
 from typing import Protocol
 
 from src.core.errors import InvalidTickerError
-from src.data.models import AssetProfile, PriceHistory, Quote
+from src.data.models import AssetProfile, NewsFeed, PriceHistory, Quote
 
 
 class ProviderError(Exception):
@@ -58,6 +58,10 @@ class MarketDataProvider(Protocol):
         """Name, asset type, and sector."""
         ...
 
+    def get_news(self, subject: str, limit: int) -> NewsFeed:
+        """Recent headlines for a ticker or a free-text market topic."""
+        ...
+
 
 _TICKER = re.compile(r"^[A-Z]{1,5}(?:-[A-Z]{1,2})?$")
 
@@ -71,3 +75,9 @@ def normalize_ticker(raw: str) -> str:
             user_message=f"“{raw.strip()}” doesn't look like a valid US ticker symbol.",
         )
     return ticker
+
+
+def looks_like_ticker(subject: str) -> bool:
+    """Return True for upper-case ticker shapes ("AAPL", "$MSFT", "BRK.B"), False for topics."""
+    raw = subject.strip().lstrip("$")
+    return raw == raw.upper() and bool(_TICKER.match(raw.replace(".", "-")))

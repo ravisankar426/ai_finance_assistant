@@ -20,12 +20,13 @@ from typing import Any, TypeVar, cast
 
 from src.core.config import MarketConfig, Settings, get_settings
 from src.core.errors import ConfigurationError, InvalidTickerError, MarketDataUnavailableError
-from src.data.models import AssetProfile, PriceHistory, Quote
+from src.data.models import AssetProfile, NewsFeed, PriceHistory, Quote
 from src.data.providers.base import (
     MarketDataProvider,
     NoDataError,
     ProviderError,
     UnsupportedOperationError,
+    looks_like_ticker,
     normalize_ticker,
 )
 from src.data.resilience import CircuitBreaker, RateLimiter, TTLCache, retry
@@ -33,7 +34,7 @@ from src.utils.logging import get_logger
 
 log = get_logger(__name__)
 
-M = TypeVar("M", Quote, PriceHistory, AssetProfile)
+M = TypeVar("M", Quote, PriceHistory, AssetProfile, NewsFeed)
 
 
 class MarketDataService:
@@ -88,6 +89,17 @@ class MarketDataService:
             "profile", ticker, self.config.ttl_profile_s, lambda p, t: p.get_profile(t)
         )
 
+    def get_news(self, subject: str, limit: int | None = None) -> NewsFeed:
+        """Recent headlines for a ticker ("AAPL") or a topic ("stock market") (REQ-NW-01)."""
+        n = limit or self.config.news_max_items
+        return self._fetch(
+            f"news:{n}",
+            subject,
+            self.config.ttl_news_s,
+            lambda p, t: p.get_news(t, n),
+            validate=looks_like_ticker(subject),
+        )
+
     # -- core ----------------------------------------------------------------------------------
 
     def _fetch(
@@ -96,8 +108,11 @@ class MarketDataService:
         raw_ticker: str,
         ttl_s: float,
         call: Callable[[MarketDataProvider, str], M],
+        *,
+        validate: bool = True,
     ) -> M:
-        ticker = normalize_ticker(raw_ticker)  # REQ-MD-07: before any network call
+        # REQ-MD-07: validate before any network call (topics like "stock market" skip this).
+        ticker = normalize_ticker(raw_ticker) if validate else raw_ticker.strip().lower()
         key = (kind, ticker)
         cached = self.cache.get_fresh(key, ttl_s)
         if cached is not None:
@@ -189,6 +204,7 @@ class MarketDataService:
 def build_market_service(settings: Settings | None = None) -> MarketDataService:
     """Wire providers in configured order; skip Alpha Vantage (with a warning) if no key."""
     from src.data.providers.alphavantage_provider import AlphaVantageProvider
+    from src.data.providers.fixture_provider import FixtureProvider
     from src.data.providers.yfinance_provider import YFinanceProvider
 
     settings = settings or get_settings()
@@ -197,6 +213,8 @@ def build_market_service(settings: Settings | None = None) -> MarketDataService:
     for name in cfg.providers:
         if name == "yfinance":
             providers.append(YFinanceProvider())
+        elif name == "fixture":
+            providers.append(FixtureProvider(cfg.fixture_dir))
         elif name == "alphavantage":
             if settings.alphavantage_api_key is None:
                 log.warning("market_provider_disabled", provider=name, reason="no API key")

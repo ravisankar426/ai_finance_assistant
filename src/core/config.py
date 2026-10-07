@@ -131,7 +131,7 @@ class RateLimit(BaseModel):
     period_s: float = Field(gt=0)
 
 
-ProviderName = Literal["yfinance", "alphavantage"]
+ProviderName = Literal["yfinance", "alphavantage", "fixture"]
 _DEFAULT_PROVIDERS: tuple[ProviderName, ...] = ("yfinance", "alphavantage")
 
 
@@ -162,10 +162,20 @@ class MarketConfig(BaseModel):
             ],
         }
     )
-    history_days: int = Field(default=365, ge=30)
+    history_days: int = Field(default=400, ge=30)  # >1y so 1-year return has a start point
+    news_max_items: int = Field(default=10, ge=1)  # headlines fetched per subject
+    news_lookback_days: int = Field(default=7, ge=1)  # older headlines are dropped (REQ-NW-01)
     # Wait up to this long for a rate-limit slot (e.g. AV's 1/s) before trying the next provider;
     # longer waits (daily quota exhausted) skip immediately.
     rate_limit_max_wait_s: float = Field(default=2.0, ge=0)
+    # Recorded data for tests and offline demos (provider "fixture"); REQ-DEL-02.
+    fixture_dir: Path = Path("src/data/fixtures/market")
+
+    @model_validator(mode="after")
+    def _resolve_fixture_dir(self) -> MarketConfig:
+        if not self.fixture_dir.is_absolute():
+            self.fixture_dir = PROJECT_ROOT / self.fixture_dir
+        return self
 
 
 class Settings(BaseSettings):

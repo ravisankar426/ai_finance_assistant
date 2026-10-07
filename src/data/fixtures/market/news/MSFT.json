@@ -1,0 +1,111 @@
+{
+ "subject": "MSFT",
+ "items": [
+  {
+   "title": "Microsoft’s $665 target hinges on a new AI advantage",
+   "url": "https://finance.yahoo.com/technology/ai/articles/microsoft-665-target-hinges-ai-223300589.html",
+   "publisher": "TheStreet",
+   "published_at": "2026-10-07T22:33:00Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  },
+  {
+   "title": "Why Is Microsoft (MSFT) Taking On More Debt For AI Infrastructure?",
+   "url": "https://finance.yahoo.com/technology/ai/articles/why-microsoft-msft-taking-more-221547741.html",
+   "publisher": "Simply Wall St.",
+   "published_at": "2026-10-07T22:15:47Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  },
+  {
+   "title": "Morningstar (MORN) Stock Is Up, What You Need To Know",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/morningstar-morn-stock-know-213647074.html",
+   "publisher": "StockStory",
+   "published_at": "2026-10-07T21:36:47Z",
+   "related_tickers": [
+    "MORN",
+    "MSFT"
+   ]
+  },
+  {
+   "title": "Acuity Analytics expands US data and technology capabilities with acquisition of Continuus",
+   "url": "https://finance.yahoo.com/technology/articles/acuity-analytics-expands-us-data-212500268.html",
+   "publisher": "PR Newswire",
+   "published_at": "2026-10-07T21:25:00Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  },
+  {
+   "title": "Acuity Analytics expands US data and technology capabilities with acquisition of Continuus",
+   "url": "https://finance.yahoo.com/technology/articles/acuity-analytics-expands-us-data-212200104.html",
+   "publisher": "CNW Group",
+   "published_at": "2026-10-07T21:22:00Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  },
+  {
+   "title": "Acuity Analytics expands US data and technology capabilities with acquisition of Continuus",
+   "url": "https://finance.yahoo.com/technology/articles/acuity-analytics-expands-us-data-212200378.html",
+   "publisher": "PR Newswire",
+   "published_at": "2026-10-07T21:22:00Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  },
+  {
+   "title": "IT Operations Analytics - Global Strategic Business Report: Capitalize on 35.2% CAGR to US$157.7 Billion by 2030 as IBM, Microsoft, Oracle, Splunk and HPE Disrupt IT Operations",
+   "url": "https://finance.yahoo.com/technology/articles/operations-analytics-global-strategic-business-211500254.html",
+   "publisher": "GlobeNewswire",
+   "published_at": "2026-10-07T21:15:00Z",
+   "related_tickers": [
+    "IBM",
+    "MSFT",
+    "ORCL",
+    "HPE"
+   ]
+  },
+  {
+   "title": "Digital Transformation - Global Strategic Business Report: Capitalize on the US$3.7 Trillion Market by 2030 as Microsoft, IBM, Accenture, Oracle and SAP Disrupt Enterprise ROI",
+   "url": "https://finance.yahoo.com/technology/articles/digital-transformation-global-strategic-business-211100026.html",
+   "publisher": "GlobeNewswire",
+   "published_at": "2026-10-07T21:11:00Z",
+   "related_tickers": [
+    "MSFT",
+    "IBM",
+    "ACN",
+    "ORCL",
+    "SAP"
+   ]
+  },
+  {
+   "title": "Marvell Technology Forecasts Accelerating Growth From AI Data Centers",
+   "url": "https://finance.yahoo.com/m/113149a6-4950-3529-b345-fef26c4234e3/marvell-technology-forecasts.html",
+   "publisher": "Investor's Business Daily",
+   "published_at": "2026-10-07T20:59:05Z",
+   "related_tickers": [
+    "MRVL",
+    "GOOG",
+    "AMZN",
+    "META",
+    "MSFT",
+    "INTC"
+   ]
+  },
+  {
+   "title": "Microsoft announces quarterly earnings release date",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/microsoft-announces-quarterly-earnings-release-201600864.html",
+   "publisher": "PR Newswire",
+   "published_at": "2026-10-07T20:16:00Z",
+   "related_tickers": [
+    "MSFT"
+   ]
+  }
+ ],
+ "as_of": "2026-10-07T22:55:47.906882Z",
+ "source": "yfinance",
+ "stale": false
+}

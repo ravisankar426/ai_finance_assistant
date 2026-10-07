@@ -1,0 +1,13 @@
+{
+ "ticker": "IWM",
+ "price": 277.7,
+ "previous_close": 281.34,
+ "change": -3.64,
+ "change_pct": -1.2938,
+ "volume": 24585463,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:38.229604Z",
+ "source": "yfinance",
+ "stale": false
+}

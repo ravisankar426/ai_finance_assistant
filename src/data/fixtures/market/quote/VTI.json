@@ -1,0 +1,13 @@
+{
+ "ticker": "VTI",
+ "price": 381.03,
+ "previous_close": 382.54,
+ "change": -1.51,
+ "change_pct": -0.3947,
+ "volume": 2730571,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:34.881438Z",
+ "source": "yfinance",
+ "stale": false
+}

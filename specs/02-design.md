@@ -142,10 +142,20 @@ Tool-calling loops are kept to ≤ 3 iterations.
 |---|---|---|---|
 | QA | – | all except tax | Answer from chunks, cite, suggest what to learn next |
 | Portfolio | market history → `portfolio_engine` | portfolio | Explain metrics, flags, educational recommendations |
-| Market | `market_service.quote/trend/overview` | markets | Explain moves and indicators, no predictions |
+| Market | ticker extraction → `market_service` quotes/history → `market_analytics.trend_snapshot`; overview of 4 index + 11 sector ETFs (plus SPY's trend) | markets, portfolio | Explain the computed fact block; a single day's move is never called a trend; no predictions; deterministic data-source/staleness footer |
 | Goals | `risk_profile`, `goal_engine` | retirement, portfolio | Explain plan, risk fit, levers |
-| News | `market_service.news` | markets | Summarize, dedupe, contextualize |
+| News | ticker extraction → `market_service.get_news` → `core.news.select_headlines` (lookback, relevance, focus ranking, dedupe) | markets | Summarize **headlines only** (free sources give no article text) with each headline linked; no predictions |
 | Tax | – | tax | Explain, cite, state tax year, refer to a professional |
+
+**Ticker extraction** (`agents/entities.py`): the router-tier model maps names to symbols
+("Apple" → AAPL) with structured output; a regex fallback catches explicit symbols if the call
+fails; config errors fail loud. A question that names no stock ("what's the stock price?") returns no
+tickers, and the Market agent asks which one (REQ-WF-10) instead of guessing.
+
+**Recorded market data** (`data/providers/fixture_provider.py`, REQ-DEL-02): `scripts/record_market_fixtures.py`
+saves normalized quotes, ~400 days of history, profiles (26 tickers), and headlines into
+`src/data/fixtures/market/`. Tests run on it, and `MARKET__PROVIDERS='["fixture"]'` gives an offline
+demo. Every value is labeled `source="recorded <date>"`, so recorded prices are never shown as live.
 
 ## 7a. Agent communication protocol
 

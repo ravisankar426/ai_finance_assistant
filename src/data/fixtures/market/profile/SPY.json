@@ -1,0 +1,11 @@
+{
+ "ticker": "SPY",
+ "name": "State Street SPDR S&P 500 ETF Trust",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:36.660792Z",
+ "source": "yfinance",
+ "stale": false
+}

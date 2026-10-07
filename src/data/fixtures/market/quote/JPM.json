@@ -1,0 +1,13 @@
+{
+ "ticker": "JPM",
+ "price": 329.58,
+ "previous_close": 331.28,
+ "change": -1.7,
+ "change_pct": -0.5132,
+ "volume": 6651143,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:33.096200Z",
+ "source": "yfinance",
+ "stale": false
+}

@@ -1,0 +1,13 @@
+{
+ "ticker": "XOM",
+ "price": 164.05,
+ "previous_close": 164.48,
+ "change": -0.43,
+ "change_pct": -0.2614,
+ "volume": 9439618,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:34.031651Z",
+ "source": "yfinance",
+ "stale": false
+}

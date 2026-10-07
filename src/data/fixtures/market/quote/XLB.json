@@ -1,0 +1,13 @@
+{
+ "ticker": "XLB",
+ "price": 48.98,
+ "previous_close": 49.73,
+ "change": -0.75,
+ "change_pct": -1.5081,
+ "volume": 9786394,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:44.606700Z",
+ "source": "yfinance",
+ "stale": false
+}

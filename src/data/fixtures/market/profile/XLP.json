@@ -1,0 +1,11 @@
+{
+ "ticker": "XLP",
+ "name": "State Street Consumer Staples Select Sector SPDR ETF",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:42.756124Z",
+ "source": "yfinance",
+ "stale": false
+}

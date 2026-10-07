@@ -1,0 +1,11 @@
+{
+ "ticker": "GOOGL",
+ "name": "Alphabet Inc.",
+ "asset_type": "equity",
+ "sector": "Communication Services",
+ "industry": "Internet Content & Information",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:30.779635Z",
+ "source": "yfinance",
+ "stale": false
+}

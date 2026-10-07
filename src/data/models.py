@@ -62,3 +62,23 @@ class AssetProfile(BaseModel):
     as_of: datetime
     source: str
     stale: bool = False
+
+
+class NewsItem(BaseModel):
+    """One headline (providers on the free tier give headlines, not article text)."""
+
+    title: str
+    url: str
+    publisher: str
+    published_at: datetime
+    related_tickers: list[str] = Field(default_factory=list)
+
+
+class NewsFeed(BaseModel):
+    """Recent headlines for a ticker or a market topic."""
+
+    subject: str  # ticker (e.g. "AAPL") or topic (e.g. "stock market")
+    items: list[NewsItem] = Field(default_factory=list)
+    as_of: datetime
+    source: str
+    stale: bool = False

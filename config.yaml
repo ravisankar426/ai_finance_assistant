@@ -42,8 +42,11 @@ market:
     alphavantage:            # free tier, measured 2026-10-07: 1 request/second and 25/day
       - {max_calls: 1, period_s: 1.1}
       - {max_calls: 25, period_s: 86400}
-  history_days: 365
+  history_days: 400          # calendar days; > 1 year so the 1-year return has a start price
   rate_limit_max_wait_s: 2.0   # wait briefly for a slot (AV 1/s); skip if longer (daily quota)
+  news_max_items: 10
+  news_lookback_days: 7      # headlines older than this are dropped
+  fixture_dir: src/data/fixtures/market   # recorded data: offline demo via MARKET__PROVIDERS='["fixture"]'
 
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).

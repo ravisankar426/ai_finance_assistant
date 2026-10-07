@@ -1,0 +1,11 @@
+{
+ "ticker": "JPM",
+ "name": "JPMorgan Chase & Co.",
+ "asset_type": "equity",
+ "sector": "Financials",
+ "industry": "Banks - Diversified",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:33.753349Z",
+ "source": "yfinance",
+ "stale": false
+}

@@ -1,0 +1,13 @@
+{
+ "ticker": "AMZN",
+ "price": 259.92,
+ "previous_close": 256.29,
+ "change": 3.63,
+ "change_pct": 1.4164,
+ "volume": 34897703,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:30.991308Z",
+ "source": "yfinance",
+ "stale": false
+}

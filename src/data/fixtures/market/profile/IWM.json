@@ -1,0 +1,11 @@
+{
+ "ticker": "IWM",
+ "name": "iShares Russell 2000 ETF",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:38.816290Z",
+ "source": "yfinance",
+ "stale": false
+}

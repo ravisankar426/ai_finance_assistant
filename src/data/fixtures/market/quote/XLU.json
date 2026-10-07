@@ -1,0 +1,13 @@
+{
+ "ticker": "XLU",
+ "price": 41.15,
+ "previous_close": 41.16,
+ "change": -0.01,
+ "change_pct": -0.0243,
+ "volume": 44925171,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:45.352264Z",
+ "source": "yfinance",
+ "stale": false
+}

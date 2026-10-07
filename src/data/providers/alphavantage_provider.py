@@ -19,7 +19,7 @@ import httpx
 from pydantic import SecretStr
 
 from src.core.errors import ConfigurationError
-from src.data.models import AssetProfile, PriceBar, PriceHistory, Quote
+from src.data.models import AssetProfile, NewsFeed, PriceBar, PriceHistory, Quote
 from src.data.providers.base import (
     NoDataError,
     RateLimitedError,
@@ -131,3 +131,7 @@ class AlphaVantageProvider:
     def get_profile(self, ticker: str) -> AssetProfile:
         """OVERVIEW is premium-only on the free key (verified live), so this always declines."""
         raise UnsupportedOperationError("Alpha Vantage OVERVIEW requires a premium key")
+
+    def get_news(self, subject: str, limit: int) -> NewsFeed:
+        """NEWS_SENTIMENT is premium-only on the free key (verified live 2026-10-07)."""
+        raise UnsupportedOperationError("Alpha Vantage NEWS_SENTIMENT requires a premium key")

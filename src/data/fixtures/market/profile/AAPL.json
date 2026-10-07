@@ -1,0 +1,11 @@
+{
+ "ticker": "AAPL",
+ "name": "Apple Inc.",
+ "asset_type": "equity",
+ "sector": "Information Technology",
+ "industry": "Consumer Electronics",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:28.462037Z",
+ "source": "yfinance",
+ "stale": false
+}

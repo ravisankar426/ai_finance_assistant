@@ -1,0 +1,13 @@
+{
+ "ticker": "XLV",
+ "price": 168.81,
+ "previous_close": 167.09,
+ "change": 1.72,
+ "change_pct": 1.0294,
+ "volume": 8870090,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:39.876961Z",
+ "source": "yfinance",
+ "stale": false
+}

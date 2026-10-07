@@ -1,0 +1,11 @@
+{
+ "ticker": "JNJ",
+ "name": "Johnson & Johnson",
+ "asset_type": "equity",
+ "sector": "Health Care",
+ "industry": "Drug Manufacturers - General",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:32.826953Z",
+ "source": "yfinance",
+ "stale": false
+}

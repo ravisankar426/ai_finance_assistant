@@ -1,0 +1,125 @@
+{
+ "subject": "stock market",
+ "items": [
+  {
+   "title": "Most Investors Misunderstand the Stock Market. Here's the One Sector I'm Buying Now.",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/most-investors-misunderstand-stock-market-223500028.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T22:35:00Z",
+   "related_tickers": [
+    "MKC",
+    "NVDA"
+   ]
+  },
+  {
+   "title": "We Are Witnessing the Stock Market Do Something for Only the 3rd Time in 156 Years, and History Is Clear About What Comes Next",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/witnessing-stock-market-something-only-215000678.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T21:50:00Z",
+   "related_tickers": [
+    "^GSPC",
+    "NVDA"
+   ]
+  },
+  {
+   "title": "Stock Market Today, Oct. 7: Webull Plunges 19% on House China Security Report",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-7-213537922.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T21:35:37Z",
+   "related_tickers": [
+    "BULL",
+    "IBKR",
+    "^GSPC",
+    "^IXIC",
+    "HOOD"
+   ]
+  },
+  {
+   "title": "Stock Market Today, Oct. 7: Itaú Unibanco Falls on Profit-Taking After Brazil Election Rally",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-7-213501422.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T21:35:01Z",
+   "related_tickers": [
+    "ITUB",
+    "^GSPC",
+    "^IXIC",
+    "SAN",
+    "NU"
+   ]
+  },
+  {
+   "title": "Stock Market Today, Oct. 7: Markets Edge Lower as Treasury Yields Surge",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-7-211702509.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T21:17:02Z",
+   "related_tickers": [
+    "STZ",
+    "CAT",
+    "INTC",
+    "NVDA",
+    "^GSPC",
+    "^DJI",
+    "GC=F",
+    "^IXIC",
+    "SPCX"
+   ]
+  },
+  {
+   "title": "Stock Market Today: S&P 500, Nasdaq Cut Losses; Nuclear Play Holds Firm",
+   "url": "https://finance.yahoo.com/m/06a29f87-8869-33a5-8fbe-90d7976fe7e3/stock-market-today%3A-s%26p-500%2C.html",
+   "publisher": "Investor's Business Daily",
+   "published_at": "2026-10-07T21:13:31Z",
+   "related_tickers": [
+    "^DJI",
+    "AMGN",
+    "NTAP",
+    "CAT",
+    "ABBV",
+    "MU",
+    "INTC",
+    "NVDA",
+    "CEG"
+   ]
+  },
+  {
+   "title": "Stock Market Falls After Hitting Record Highs. What Changed Overnight?",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stock-market-falls-hitting-record-210514177.html",
+   "publisher": "BeInCrypto",
+   "published_at": "2026-10-07T21:05:14Z",
+   "related_tickers": []
+  },
+  {
+   "title": "Stock Market Today, Oct. 7: QXO Falls 7% on RBC Price-Target Cut to $18",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stock-market-today-oct-7-210336903.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T21:03:36Z",
+   "related_tickers": [
+    "QXO",
+    "OC",
+    "^IXIC",
+    "BLDR",
+    "^GSPC"
+   ]
+  },
+  {
+   "title": "This Couple Pulled $600,000 From The Stock Market When Things Got Scary. Now They're Fighting Over Who Made Them Miss The Rebound",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/couple-pulled-600-000-stock-203019025.html",
+   "publisher": "Benzinga",
+   "published_at": "2026-10-07T20:30:19Z",
+   "related_tickers": []
+  },
+  {
+   "title": "Stocks Fall as Treasury Yields Hit New Highs: Stock Market Today",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/stocks-fall-treasury-yields-hit-201027431.html",
+   "publisher": "Kiplinger",
+   "published_at": "2026-10-07T20:10:27Z",
+   "related_tickers": [
+    "^DJI",
+    "^IXIC"
+   ]
+  }
+ ],
+ "as_of": "2026-10-07T22:55:48.904513Z",
+ "source": "yfinance",
+ "stale": false
+}

@@ -1,0 +1,11 @@
+{
+ "ticker": "XOM",
+ "name": "ExxonMobil Holdings Corporation",
+ "asset_type": "equity",
+ "sector": "Energy",
+ "industry": "Oil & Gas Integrated",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:34.650670Z",
+ "source": "yfinance",
+ "stale": false
+}

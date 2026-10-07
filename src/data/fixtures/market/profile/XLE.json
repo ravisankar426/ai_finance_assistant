@@ -1,0 +1,11 @@
+{
+ "ticker": "XLE",
+ "name": "State Street Energy Select Sector SPDR ETF",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:43.573934Z",
+ "source": "yfinance",
+ "stale": false
+}

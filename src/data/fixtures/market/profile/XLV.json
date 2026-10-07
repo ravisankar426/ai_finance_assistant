@@ -1,0 +1,11 @@
+{
+ "ticker": "XLV",
+ "name": "State Street Health Care Select Sector SPDR ETF",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:40.360011Z",
+ "source": "yfinance",
+ "stale": false
+}

@@ -22,7 +22,15 @@ from yfinance.exceptions import (
     YFTickerMissingError,
 )
 
-from src.data.models import AssetProfile, AssetType, PriceBar, PriceHistory, Quote
+from src.data.models import (
+    AssetProfile,
+    AssetType,
+    NewsFeed,
+    NewsItem,
+    PriceBar,
+    PriceHistory,
+    Quote,
+)
 from src.data.providers.base import NoDataError, RateLimitedError, TransientProviderError
 
 YAHOO_TO_GICS: dict[str, str] = {
@@ -60,9 +68,11 @@ class YFinanceProvider:
         self,
         *,
         ticker_factory: Callable[[str], Any] = yf.Ticker,
+        search_factory: Callable[..., Any] = yf.Search,
         clock: Callable[[], datetime] = _now,
     ) -> None:
         self.ticker_factory = ticker_factory
+        self.search_factory = search_factory
         self.clock = clock
 
     def _call(self, fn: Callable[[], Any]) -> Any:
@@ -140,3 +150,20 @@ class YFinanceProvider:
             as_of=self.clock(),
             source=self.name,
         )
+
+    def get_news(self, subject: str, limit: int) -> NewsFeed:
+        """Headlines via Yahoo search (``Ticker.news`` returned nothing when probed 2026-10-07)."""
+        search = self._call(lambda: self.search_factory(subject, news_count=limit, max_results=0))
+        raw: list[dict[str, Any]] = getattr(search, "news", None) or []
+        items = [
+            NewsItem(
+                title=str(n["title"]),
+                url=str(n["link"]),
+                publisher=str(n.get("publisher") or "Unknown"),
+                published_at=datetime.fromtimestamp(int(n["providerPublishTime"]), UTC),
+                related_tickers=[str(t) for t in n.get("relatedTickers") or []],
+            )
+            for n in raw
+            if n.get("title") and n.get("link") and n.get("providerPublishTime")
+        ]
+        return NewsFeed(subject=subject, items=items, as_of=self.clock(), source=self.name)

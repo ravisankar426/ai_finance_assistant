@@ -1,0 +1,13 @@
+{
+ "ticker": "XLI",
+ "price": 167.84,
+ "previous_close": 171.58,
+ "change": -3.74,
+ "change_pct": -2.1797,
+ "volume": 8149950,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:43.803399Z",
+ "source": "yfinance",
+ "stale": false
+}

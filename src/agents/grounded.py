@@ -123,15 +123,7 @@ class GroundedAgent:
     @staticmethod
     def _cited(answer: str, chunks: Sequence[RetrievedChunk]) -> list[Citation]:
         """Citations for the [n] markers (all sources if none), one per article."""
-        numbers = {int(n) for n in _CITE.findall(answer) if 1 <= int(n) <= len(chunks)}
-        used = [chunks[n - 1] for n in sorted(numbers)] or list(chunks)
-        seen: set[str] = set()
-        citations = []
-        for c in used:
-            if c.article_id not in seen:  # several chunks of one article -> one citation
-                seen.add(c.article_id)
-                citations.append(c.citation())
-        return citations
+        return cited_chunks(answer, chunks, fallback_all=True)
 
     def _learn_next(
         self, ranked: Sequence[RetrievedChunk], cited_articles: set[str], inp: AgentInput
@@ -148,3 +140,24 @@ class GroundedAgent:
             if len(picks) == self.learn_next:
                 break
         return picks
+
+
+def cited_chunks(
+    answer: str, chunks: Sequence[RetrievedChunk], *, fallback_all: bool = False, offset: int = 0
+) -> list[Citation]:
+    """One citation per article whose marker ``[offset + n]`` appears in ``answer``.
+
+    ``fallback_all``: cite every chunk when the answer has no markers (the answer is built
+    *only* from these sources, e.g. Q&A). Agents mixing data and concepts use False.
+    """
+    numbers = {int(n) - offset for n in _CITE.findall(answer)}
+    used = [chunks[n - 1] for n in sorted(numbers) if 1 <= n <= len(chunks)]
+    if not used and fallback_all:
+        used = list(chunks)
+    seen: set[str] = set()
+    citations = []
+    for c in used:
+        if c.article_id not in seen:  # several chunks of one article -> one citation
+            seen.add(c.article_id)
+            citations.append(c.citation())
+    return citations

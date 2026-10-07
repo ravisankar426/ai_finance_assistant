@@ -1,0 +1,13 @@
+{
+ "ticker": "XLK",
+ "price": 201.39,
+ "previous_close": 202.0,
+ "change": -0.61,
+ "change_pct": -0.302,
+ "volume": 6308714,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:39.112236Z",
+ "source": "yfinance",
+ "stale": false
+}

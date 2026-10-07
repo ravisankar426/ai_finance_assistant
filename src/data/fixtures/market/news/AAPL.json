@@ -1,0 +1,119 @@
+{
+ "subject": "AAPL",
+ "items": [
+  {
+   "title": "Dow Jones Futures: Stocks Pare Losses As Yields Back Off; Samsung, Micron, Taiwan Semi, Sandisk In Focus",
+   "url": "https://finance.yahoo.com/m/c861c57f-11ed-33ef-ad7c-615f55181128/dow-jones-futures%3A-stocks.html",
+   "publisher": "Investor's Business Daily",
+   "published_at": "2026-10-07T22:43:18Z",
+   "related_tickers": [
+    "005930.KS",
+    "^DJI",
+    "TSM",
+    "MU",
+    "SNDK",
+    "LLY",
+    "^GSPC",
+    "^IXIC",
+    "AAPL",
+    "^RUT",
+    "SKHY",
+    "ABBV",
+    "SKHY"
+   ]
+  },
+  {
+   "title": "Nvidia Earned About Twice as Much as Apple Last Quarter. Its Stock Is Worth Only About 20% More.",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/nvidia-earned-twice-much-apple-205701912.html",
+   "publisher": "Motley Fool",
+   "published_at": "2026-10-07T20:57:01Z",
+   "related_tickers": [
+    "NVDA",
+    "AAPL"
+   ]
+  },
+  {
+   "title": "Apple, IBD Stock Of The Day, Rises Near Buy Points Ahead Of Smart Home Launch",
+   "url": "https://finance.yahoo.com/m/f4d24672-6d61-34bb-bcea-3ad5e39f9139/apple%2C-ibd-stock-of-the-day%2C.html",
+   "publisher": "Investor's Business Daily",
+   "published_at": "2026-10-07T20:37:33Z",
+   "related_tickers": [
+    "AAPL",
+    "066570.KS"
+   ]
+  },
+  {
+   "title": "The tech industry wants you to run AI models at home, but it's not for everyone",
+   "url": "https://finance.yahoo.com/technology/article/the-tech-industry-wants-you-to-run-ai-models-at-home-but-its-not-for-everyone-195314548.html",
+   "publisher": "Yahoo Finance",
+   "published_at": "2026-10-07T19:53:14Z",
+   "related_tickers": [
+    "MSFT",
+    "NVDA",
+    "GOOG",
+    "META",
+    "AAPL",
+    "INTC",
+    "AMD",
+    "OPAI.PVT",
+    "ANTH.PVT"
+   ]
+  },
+  {
+   "title": "Dan Ives Thinks AI Buildout Still In Early Stages, With NVDA, MSFT, PLTR, AAPL And CRWD As Top AI Picks",
+   "url": "https://finance.yahoo.com/technology/ai/articles/dan-ives-thinks-ai-buildout-190018254.html",
+   "publisher": "Stocktwits",
+   "published_at": "2026-10-07T19:00:18Z",
+   "related_tickers": [
+    "NVDA",
+    "MSFT",
+    "PLTR",
+    "AAPL",
+    "CRWD"
+   ]
+  },
+  {
+   "title": "Microsoft debuts Nvidia-powered Surface Laptop Ultra, as it aims for AI market",
+   "url": "https://finance.yahoo.com/technology/article/microsoft-debuts-nvidia-powered-surface-laptop-ultra-as-it-aims-for-ai-market-185630649.html",
+   "publisher": "Yahoo Finance",
+   "published_at": "2026-10-07T18:56:30Z",
+   "related_tickers": [
+    "MSFT",
+    "NVDA",
+    "AAPL"
+   ]
+  },
+  {
+   "title": "Apple Is Taking Another Shot at the Smart Home",
+   "url": "https://finance.yahoo.com/technology/articles/apple-taking-another-shot-smart-184238425.html",
+   "publisher": "GuruFocus.com",
+   "published_at": "2026-10-07T18:42:38Z",
+   "related_tickers": [
+    "AAPL",
+    "066570.KS"
+   ]
+  },
+  {
+   "title": "Micron’s 107% Upside Scenario Depends on Precisely 1 Thing",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/micron-107-upside-scenario-depends-183922349.html",
+   "publisher": "TIKR",
+   "published_at": "2026-10-07T18:39:22Z",
+   "related_tickers": [
+    "MU",
+    "AAPL"
+   ]
+  },
+  {
+   "title": "Apple Stocks Rise as $400 Target Reprices Siri AI",
+   "url": "https://finance.yahoo.com/markets/stocks/articles/apple-stocks-rise-400-target-172623600.html",
+   "publisher": "GuruFocus.com",
+   "published_at": "2026-10-07T17:26:23Z",
+   "related_tickers": [
+    "AAPL"
+   ]
+  }
+ ],
+ "as_of": "2026-10-07T22:55:47.547683Z",
+ "source": "yfinance",
+ "stale": false
+}

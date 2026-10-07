@@ -1,0 +1,13 @@
+{
+ "ticker": "JNJ",
+ "price": 258.45,
+ "previous_close": 254.78,
+ "change": 3.67,
+ "change_pct": 1.4405,
+ "volume": 5277426,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:32.407624Z",
+ "source": "yfinance",
+ "stale": false
+}

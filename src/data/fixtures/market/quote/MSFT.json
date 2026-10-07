@@ -1,0 +1,13 @@
+{
+ "ticker": "MSFT",
+ "price": 529.76,
+ "previous_close": 529.3,
+ "change": 0.46,
+ "change_pct": 0.0869,
+ "volume": 16040951,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:28.668873Z",
+ "source": "yfinance",
+ "stale": false
+}

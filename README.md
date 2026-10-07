@@ -18,6 +18,10 @@ make ui                       # Streamlit app at http://localhost:8501
 make chat                     # chat in the terminal (live models)
 ```
 
+**Offline demo (no market APIs needed):** `MARKET__PROVIDERS='["fixture"]' make ui` serves recorded
+market data, clearly labeled “recorded <date>”. Refresh it with `uv run python scripts/record_market_fixtures.py`.
+**Check market data:** `uv run python scripts/market_check.py AAPL SPY` (add `--yahoo-down` to simulate an outage).
+
 ## Layout
 
 ```

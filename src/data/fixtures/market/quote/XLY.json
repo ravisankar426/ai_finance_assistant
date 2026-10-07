@@ -1,0 +1,13 @@
+{
+ "ticker": "XLY",
+ "price": 111.36,
+ "previous_close": 111.72,
+ "change": -0.36,
+ "change_pct": -0.3222,
+ "volume": 6695862,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:41.426052Z",
+ "source": "yfinance",
+ "stale": false
+}

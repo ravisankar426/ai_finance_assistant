@@ -1,0 +1,13 @@
+{
+ "ticker": "XLP",
+ "price": 81.7,
+ "previous_close": 81.8,
+ "change": -0.1,
+ "change_pct": -0.1223,
+ "volume": 9437177,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:42.103325Z",
+ "source": "yfinance",
+ "stale": false
+}

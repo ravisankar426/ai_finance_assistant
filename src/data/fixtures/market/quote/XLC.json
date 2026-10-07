@@ -1,0 +1,13 @@
+{
+ "ticker": "XLC",
+ "price": 111.26,
+ "previous_close": 111.65,
+ "change": -0.39,
+ "change_pct": -0.3493,
+ "volume": 4252191,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:46.829754Z",
+ "source": "yfinance",
+ "stale": false
+}

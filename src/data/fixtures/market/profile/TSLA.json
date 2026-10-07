@@ -1,0 +1,11 @@
+{
+ "ticker": "TSLA",
+ "name": "Tesla, Inc.",
+ "asset_type": "equity",
+ "sector": "Consumer Discretionary",
+ "industry": "Auto Manufacturers",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:32.085070Z",
+ "source": "yfinance",
+ "stale": false
+}

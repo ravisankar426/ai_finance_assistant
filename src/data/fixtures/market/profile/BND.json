@@ -1,0 +1,11 @@
+{
+ "ticker": "BND",
+ "name": "Vanguard Total Bond Market Index Fund ETF Shares",
+ "asset_type": "etf",
+ "sector": null,
+ "industry": null,
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:36.049465Z",
+ "source": "yfinance",
+ "stale": false
+}

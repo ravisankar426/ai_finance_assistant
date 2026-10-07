@@ -1,0 +1,13 @@
+{
+ "ticker": "SPY",
+ "price": 777.22,
+ "previous_close": 779.09,
+ "change": -1.8701,
+ "change_pct": -0.24,
+ "volume": 30746070,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:36.188319Z",
+ "source": "yfinance",
+ "stale": false
+}

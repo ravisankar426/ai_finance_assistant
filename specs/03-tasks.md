@@ -44,10 +44,10 @@ and you can answer that day's checkpoint questions.
 **Learn:** resilience patterns (retry, backoff, jitter, circuit breaker, bulkhead), caching TTL strategy.
 
 ## Day 5 — Fri Oct 9 · Market + News agents
-| T5.1 | Trend analytics (SMA, returns, 52-wk, volatility), market overview | MK-01..04 |
-| T5.2 | Market agent | MK-01..04 |
-| T5.3 | News fetch + dedupe + News agent | NW-01..04 |
-| T5.4 | Recorded fixtures so tests and the demo don't depend on live APIs | DEL-02 |
+| T5.1 | ✅ Trend analytics (SMA, returns, 52-wk, volatility), market overview | MK-01..04 |
+| T5.2 | ✅ Market agent | MK-01..04 |
+| T5.3 | ✅ News fetch + dedupe + News agent | NW-01..04 |
+| T5.4 | ✅ Recorded fixtures so tests and the demo don't depend on live APIs | DEL-02 |
 **Learn (finance primer I):** quotes, indices, ETFs, sectors, SMA, volatility, how to read news without predicting.
 
 ## Weekend Oct 10–11 · Buffer / catch-up / re-read code

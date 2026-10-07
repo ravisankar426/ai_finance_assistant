@@ -1,0 +1,11 @@
+{
+ "ticker": "MSFT",
+ "name": "Microsoft Corporation",
+ "asset_type": "equity",
+ "sector": "Information Technology",
+ "industry": "Software - Infrastructure",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:29.153510Z",
+ "source": "yfinance",
+ "stale": false
+}

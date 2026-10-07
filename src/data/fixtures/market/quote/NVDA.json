@@ -1,0 +1,13 @@
+{
+ "ticker": "NVDA",
+ "price": 237.47,
+ "previous_close": 239.24,
+ "change": -1.77,
+ "change_pct": -0.7398,
+ "volume": 81027431,
+ "currency": "USD",
+ "market_date": "2026-10-07",
+ "as_of": "2026-10-07T22:55:29.458212Z",
+ "source": "yfinance",
+ "stale": false
+}

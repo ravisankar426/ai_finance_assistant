@@ -26,6 +26,9 @@ from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Send
 
 from src.agents.base import Agent, run_safely
+from src.agents.entities import TickerExtractor, TickerRequest
+from src.agents.market import MarketAgent
+from src.agents.news import NewsAgent
 from src.agents.placeholder import PlaceholderAgent
 from src.agents.qa import QAAgent
 from src.agents.tax import TaxAgent
@@ -33,6 +36,7 @@ from src.core.config import Settings, get_settings
 from src.core.guards import OUT_OF_SCOPE_REPLY, redact_user_text, with_disclaimer
 from src.core.llm import get_chat_model, get_embeddings
 from src.core.models import AGENT_LABELS, AGENT_NAMES, AgentResult, Citation, UserProfile
+from src.data.market_service import build_market_service
 from src.rag.index import load_or_build
 from src.rag.knowledge_base import load_articles
 from src.rag.retriever import HybridRetriever
@@ -118,13 +122,14 @@ def synthesizer(state: GraphState) -> dict[str, Any]:
     """Merge agent results into one answer (deterministic today; LLM merge on Day 7)."""
     order = {name: i for i, name in enumerate((*AGENT_NAMES, "out_of_scope"))}
     results = sorted(state.get("agent_results", []), key=lambda r: order.get(r.agent, 99))
-    ok = [r for r in results if r.error is None and r.answer]
+    ok = [r for r in results if r.error is None and (r.answer or r.follow_up_question)]
     failed = [r for r in results if r.error is not None]
 
-    if len(ok) == 1:
-        parts = [ok[0].answer]
+    answered = [r for r in ok if r.answer]
+    if len(answered) == 1:
+        parts = [answered[0].answer]
     else:
-        parts = [f"**{AGENT_LABELS.get(r.agent, r.agent)}**\n\n{r.answer}" for r in ok]
+        parts = [f"**{AGENT_LABELS.get(r.agent, r.agent)}**\n\n{r.answer}" for r in answered]
     parts += [f"> ⚠️ {r.error}" for r in failed]  # partial answer + notice (REQ-WF-05)
     parts += [f"**Quick question:** {r.follow_up_question}" for r in ok if r.follow_up_question]
     answer = "\n\n".join(parts) or "Sorry, I couldn't produce an answer. Please try again."
@@ -218,6 +223,18 @@ def build_default_graph(settings: Settings | None = None) -> CompiledStateGraph[
     agent_model = get_chat_model("agent", settings=settings)
     for name, cls in (("qa", QAAgent), ("tax", TaxAgent)):
         agents[name] = cls(agent_model, retriever, top_k=rag.top_k, history_messages=history)
+    market = build_market_service(settings)
+    extractor = TickerExtractor(
+        get_chat_model("router", structured_output=TickerRequest, settings=settings)
+    )
+    agents["market"] = MarketAgent(agent_model, extractor, market, retriever)
+    agents["news"] = NewsAgent(
+        agent_model,
+        extractor,
+        market,
+        retriever,
+        lookback_days=settings.market.news_lookback_days,
+    )
     router = Router(
         get_chat_model("router", structured_output=RouteDecision, settings=settings),
         history_messages=history,

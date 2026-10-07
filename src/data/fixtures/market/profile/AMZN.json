@@ -1,0 +1,11 @@
+{
+ "ticker": "AMZN",
+ "name": "Amazon.com, Inc.",
+ "asset_type": "equity",
+ "sector": "Consumer Discretionary",
+ "industry": "Internet Retail",
+ "currency": "USD",
+ "as_of": "2026-10-07T22:55:31.390504Z",
+ "source": "yfinance",
+ "stale": false
+}
