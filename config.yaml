@@ -9,6 +9,14 @@ app:
   log_level: INFO
   log_format: console      # console (human-readable) | json (production)
 
+workflow:
+  history_messages: 6      # recent messages the router/agents see (follow-up questions)
+
+rag:
+  knowledge_base_dir: src/data/knowledge_base
+  top_k: 4
+  min_score: 0.2           # below this relevance, answer "not covered" instead of guessing
+
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).
   # Model IDs: confirm against your keys with `uv run python scripts/check_models.py`.
@@ -27,7 +35,9 @@ llm:
   # 3.5 Flash-Lite: ~1 s, minimal thinking — close to the primary's latency (measured 2026-10-06).
   # Pinned to an explicit version, not "gemini-flash-lite-latest": aliases change behavior silently.
   fallback:      { provider: google_genai, model: gemini-3.5-flash-lite, timeout_s: 30, max_retries: 1 }
-  fallback_exempt_roles: [judge]   # the judge must stay independent of the generator
+  # The judge is a measuring instrument: silently switching models mid-eval would mix two
+  # "rulers" and make scores incomparable. Evals are offline, so fail-and-retry is cheap.
+  fallback_exempt_roles: [judge]
 
   embeddings:    { provider: openai, model: text-embedding-3-small }
 
@@ -35,6 +45,9 @@ llm:
   pricing:
     gpt-4.1-nano:           { input: 0.10, output: 0.40 }
     gpt-4.1-mini:           { input: 0.40, output: 1.60 }
+    # Pre-priced alternatives, so switching a role is a single env var (LLM__ROLES__AGENT__MODEL).
+    gpt-4.1:                { input: 2.00, output: 8.00 }
+    gpt-5.4-mini:           { input: 0.75, output: 4.50 }
     gemini-3.5-flash:       { input: 1.50, output: 9.00 }   # output includes thinking tokens
     gemini-3.5-flash-lite:  { input: 0.30, output: 2.50 }
     text-embedding-3-small: { input: 0.02, output: 0.0 }

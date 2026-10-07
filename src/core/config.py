@@ -94,6 +94,26 @@ class LLMConfig(BaseModel):
         return self
 
 
+class WorkflowConfig(BaseModel):
+    """LangGraph workflow settings."""
+
+    history_messages: int = Field(default=6, ge=0)  # recent turns shown to router/agents
+
+
+class RAGConfig(BaseModel):
+    """Knowledge-base retrieval settings."""
+
+    knowledge_base_dir: Path = Path("src/data/knowledge_base")
+    top_k: int = Field(default=4, ge=1)
+    min_score: float = Field(default=0.2, ge=0, le=1)  # below this -> "not covered" (REQ-QA-02)
+
+    @model_validator(mode="after")
+    def _resolve_paths(self) -> RAGConfig:
+        if not self.knowledge_base_dir.is_absolute():
+            self.knowledge_base_dir = PROJECT_ROOT / self.knowledge_base_dir
+        return self
+
+
 class Settings(BaseSettings):
     """Root settings object. Get it via :func:`get_settings`."""
 
@@ -105,6 +125,8 @@ class Settings(BaseSettings):
 
     app: AppConfig = Field(default_factory=AppConfig)
     llm: LLMConfig
+    workflow: WorkflowConfig = Field(default_factory=WorkflowConfig)
+    rag: RAGConfig = Field(default_factory=RAGConfig)
 
     # Secrets — env/.env only. SecretStr keeps them out of repr() and logs.
     openai_api_key: SecretStr | None = None

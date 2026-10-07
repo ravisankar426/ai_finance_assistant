@@ -108,12 +108,23 @@ START → input_guard ─(blocked)→ refuse → END
              └→ router ─(Send per intent)→ {qa|portfolio|market|goals|news|tax}_agent
                                                      └→ synthesizer → output_guard → END
 ```
-- The router returns `list[Send]`, one per intent. This is how LangGraph runs a dynamic fan-out.
-- Every agent node is wrapped by `safe_node()`: it applies a timeout, catches exceptions, and returns
-  `AgentResult(error=...)` instead of raising (REQ-WF-05).
-- The synthesizer skips the LLM when there's one result with no errors (saves latency and cost);
-  otherwise it merges the results and de-duplicates citations.
-- `output_guard`: directive detector → rewrite (REQ-GR-04), then add the disclaimer (REQ-GR-03).
+- The router node writes `intents` and a **standalone question** (follow-ups like "what about its
+  fees?" rewritten as self-contained questions, so retrieval works across turns). A conditional edge
+  (`dispatch`) turns the intents into `list[Send]`, one per intent; this is LangGraph's dynamic fan-out.
+  Agent nodes declare `input_schema=AgentInput`: each receives only its `Send` payload.
+- Every agent runs inside `run_safely()`: exceptions become `AgentResult(error=...)` (REQ-WF-05), but
+  configuration errors are re-raised (REQ-LLM-07). Per-call timeouts come from the model config.
+- `input_guard` redacts PII **in place** (same message id → `add_messages` replaces it), so neither the
+  LLMs nor the checkpoint store ever hold the raw value (REQ-GR-05). It also clears last turn's
+  `agent_results` (custom `add_or_reset` reducer: `None` = reset).
+- The synthesizer is deterministic today (one result → as is; several → one headed section per agent,
+  plus failure notices). The LLM merge comes on Day 7.
+- `output_guard`: (Day 7) directive detector → rewrite (REQ-GR-04); adds the disclaimer except to
+  pure out-of-scope refusals (REQ-GR-03). History stores the answer *without* the disclaimer.
+- Checkpointer: `InMemorySaver` with a serializer that allowlists our Pydantic types; LangGraph refuses
+  to deserialize unregistered classes from saved state.
+- Day 2 retrieval: `KeywordRetriever` (IDF-weighted term coverage, title bonus for ranking) behind
+  the `Retriever` protocol; Day 3 replaces it with FAISS + BM25 without changing any agent.
 
 ## 7. Agent contract (`agents/base.py`)
 

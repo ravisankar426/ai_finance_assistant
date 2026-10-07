@@ -1,3 +1,5 @@
+altair==6.3.0
+    # via streamlit
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -7,6 +9,12 @@ anyio==4.15.1
     #   httpx2
     #   langsmith
     #   openai
+    #   starlette
+    #   streamlit
+attrs==26.1.0
+    # via
+    #   jsonschema
+    #   referencing
 certifi==2026.7.22
     # via
     #   httpcore
@@ -17,6 +25,10 @@ cffi==2.1.1 ; platform_python_implementation != 'PyPy'
     # via cryptography
 charset-normalizer==3.5.2
     # via requests
+click==8.5.0
+    # via
+    #   streamlit
+    #   uvicorn
 cryptography==50.0.2
     # via google-auth
 distro==1.9.0
@@ -33,10 +45,13 @@ h11==0.16.0
     # via
     #   httpcore
     #   httpcore2
+    #   uvicorn
 httpcore==1.0.9
     # via httpx
 httpcore2==2.13.1 ; sys_platform != 'emscripten'
     # via httpx2
+httptools==0.8.0
+    # via streamlit
 httpx==0.28.1
     # via
     #   google-genai
@@ -54,12 +69,22 @@ idna==3.20
     #   httpx
     #   httpx2
     #   requests
+itsdangerous==2.2.0
+    # via streamlit
+jinja2==3.1.6
+    # via
+    #   altair
+    #   pydeck
 jiter==0.17.0
     # via openai
 jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.1.1
     # via jsonpatch
+jsonschema==4.26.0
+    # via altair
+jsonschema-specifications==2025.9.1
+    # via jsonschema
 langchain==1.4.3
     # via ai-finance-assistant
 langchain-core==1.6.6
@@ -81,7 +106,9 @@ langchain-protocol==0.0.19
     #   langchain-core
     #   langgraph-sdk
 langgraph==1.2.13
-    # via langchain
+    # via
+    #   ai-finance-assistant
+    #   langchain
 langgraph-checkpoint==4.2.0
     # via
     #   langgraph
@@ -92,6 +119,15 @@ langgraph-sdk==0.4.5
     # via langgraph
 langsmith==0.14.4
     # via langchain-core
+markupsafe==3.0.4
+    # via jinja2
+narwhals==2.26.0
+    # via altair
+numpy==2.5.3
+    # via
+    #   pandas
+    #   pydeck
+    #   streamlit
 openai==3.24.0
     # via langchain-openai
 orjson==3.12.0
@@ -102,8 +138,18 @@ ormsgpack==1.12.2
     # via langgraph-checkpoint
 packaging==26.3
     # via
+    #   altair
     #   langchain-core
     #   langsmith
+    #   streamlit
+pandas==3.0.6
+    # via streamlit
+pillow==12.3.0
+    # via streamlit
+protobuf==7.36.2
+    # via streamlit
+pyarrow==25.0.1
+    # via streamlit
 pyasn1==0.6.4
     # via pyasn1-modules
 pyasn1-modules==0.4.2
@@ -125,12 +171,22 @@ pydantic-core==2.46.5
     # via pydantic
 pydantic-settings==2.15.0
     # via ai-finance-assistant
+pydeck==0.9.3
+    # via streamlit
+python-dateutil==2.9.0.post0
+    # via pandas
 python-dotenv==1.2.4
     # via pydantic-settings
+python-multipart==0.0.32
+    # via streamlit
 pyyaml==6.0.3
     # via
     #   ai-finance-assistant
     #   langchain-core
+referencing==0.37.0
+    # via
+    #   jsonschema
+    #   jsonschema-specifications
 regex==2026.9.29
     # via tiktoken
 requests==2.34.2
@@ -139,14 +195,25 @@ requests==2.34.2
     #   google-genai
     #   langsmith
     #   requests-toolbelt
+    #   streamlit
     #   tiktoken
 requests-toolbelt==1.0.0
     # via langsmith
+rpds-py==2026.9.1
+    # via
+    #   jsonschema
+    #   referencing
+six==1.17.0
+    # via python-dateutil
 sniffio==1.3.1
     # via
     #   google-genai
     #   langsmith
     #   openai
+starlette==1.7.0
+    # via streamlit
+streamlit==1.65.0
+    # via ai-finance-assistant
 structlog==26.1.0
     # via ai-finance-assistant
 tenacity==9.1.4
@@ -155,12 +222,15 @@ tenacity==9.1.4
     #   langchain-core
 tiktoken==0.14.0
     # via langchain-openai
+toml==0.10.2
+    # via streamlit
 truststore==0.10.4 ; sys_platform != 'emscripten'
     # via
     #   httpcore2
     #   httpx2
 typing-extensions==4.16.0
     # via
+    #   altair
     #   anyio
     #   google-genai
     #   httpx2
@@ -170,22 +240,32 @@ typing-extensions==4.16.0
     #   openai
     #   pydantic
     #   pydantic-core
+    #   referencing
+    #   starlette
+    #   streamlit
     #   typing-inspection
 typing-inspection==0.4.4
     # via
     #   pydantic
     #   pydantic-settings
+tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
+    # via pandas
 urllib3==2.8.0
     # via requests
 uuid-utils==0.17.1
     # via
     #   langchain-core
     #   langsmith
+uvicorn==0.54.0
+    # via streamlit
+watchdog==6.0.0 ; sys_platform != 'darwin'
+    # via streamlit
 websockets==16.1.1
     # via
     #   google-genai
     #   langgraph-sdk
     #   langsmith
+    #   streamlit
 xxhash==4.0.1
     # via
     #   langgraph

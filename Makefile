@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check trace models requirements
+.PHONY: install lint format typecheck test check trace models requirements ui chat
 
 install:        ## install deps + git hooks
 	uv sync
@@ -28,3 +28,9 @@ models:         ## live: list models + smoke-test every role (needs keys in .env
 
 requirements:   ## regenerate requirements.txt from uv.lock
 	uv export --format requirements-txt --no-hashes --no-dev --no-emit-project --no-header -o requirements.txt
+
+ui:             ## run the Streamlit app
+	uv run streamlit run src/web_app/ui/app.py
+
+chat:           ## live: chat with the assistant in the terminal (needs keys in .env)
+	uv run python scripts/chat_cli.py

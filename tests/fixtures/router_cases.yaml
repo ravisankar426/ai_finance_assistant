@@ -1,0 +1,32 @@
+# Labeled routing cases (REQ-WF-01). `expected` = the intents that must be present.
+# Used by: the keyword-router baseline (offline) and the live LLM-router eval (-m live).
+- {text: "What is an index fund?", expected: [qa]}
+- {text: "How does compound interest work?", expected: [qa]}
+- {text: "Explain the difference between stocks and bonds", expected: [qa]}
+- {text: "What is diversification and why does it matter?", expected: [qa]}
+- {text: "How big should an emergency fund be?", expected: [qa]}
+- {text: "What does an expense ratio mean?", expected: [qa]}
+- {text: "Is dollar-cost averaging a good idea for beginners?", expected: [qa]}
+- {text: "Analyze my portfolio: 10 AAPL, 5 MSFT and 20 VTI", expected: [portfolio]}
+- {text: "I own 50 shares of TSLA, am I too concentrated?", expected: [portfolio]}
+- {text: "How diversified are my holdings?", expected: [portfolio]}
+- {text: "What's the current price of NVDA?", expected: [market]}
+- {text: "How is the S&P 500 doing today?", expected: [market]}
+- {text: "Give me a quote for MSFT", expected: [market]}
+- {text: "How is the Nasdaq trading this week?", expected: [market]}
+- {text: "I want to retire in 25 years, how much should I save each month?", expected: [goals]}
+- {text: "Help me plan a down payment for a house in 5 years", expected: [goals]}
+- {text: "What's my risk tolerance if I panic when markets drop?", expected: [goals]}
+- {text: "I'm saving for my kid's college in 10 years", expected: [goals]}
+- {text: "Any news about Apple this week?", expected: [news]}
+- {text: "What are today's top financial headlines?", expected: [news]}
+- {text: "What did Nvidia announce in its earnings report?", expected: [news]}
+- {text: "What's the difference between a Roth IRA and a traditional IRA?", expected: [tax]}
+- {text: "How are long-term capital gains taxed?", expected: [tax]}
+- {text: "What is the wash sale rule?", expected: [tax]}
+- {text: "Can I use my HSA for retirement?", expected: [tax]}
+- {text: "What's NVDA trading at, and any news on it?", expected: [market, news]}
+- {text: "Should I max my 401(k) to reach my retirement goal?", expected: [tax, goals]}
+- {text: "Give me a lasagna recipe", expected: [out_of_scope]}
+- {text: "Write a Python function to sort a list", expected: [out_of_scope]}
+- {text: "Who won the football game last night?", expected: [out_of_scope]}
