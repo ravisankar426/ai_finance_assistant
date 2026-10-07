@@ -69,3 +69,10 @@ def test_get_settings_is_cached() -> None:
     """REQ-LLM-02: settings are loaded once per process."""
     assert get_settings() is get_settings()
     assert (PROJECT_ROOT / "config.yaml").exists()
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_blank_api_key_counts_as_missing(monkeypatch: pytest.MonkeyPatch, blank: str) -> None:
+    """REQ-LLM-07: `OPENAI_API_KEY=` must fail fast as 'missing', not later as a bad key."""
+    monkeypatch.setenv("OPENAI_API_KEY", blank)
+    assert Settings(_env_file=None).openai_api_key is None  # type: ignore[call-arg]

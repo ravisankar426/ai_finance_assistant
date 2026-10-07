@@ -16,7 +16,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field, SecretStr, model_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -132,6 +132,14 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     google_api_key: SecretStr | None = None
     alphavantage_api_key: SecretStr | None = None
+
+    @field_validator("openai_api_key", "google_api_key", "alphavantage_api_key", mode="after")
+    @classmethod
+    def _blank_key_is_missing(cls, value: SecretStr | None) -> SecretStr | None:
+        """Treat ``KEY=`` (empty/whitespace) as not set, so it fails fast as 'missing'."""
+        if value is not None and not value.get_secret_value().strip():
+            return None
+        return value
 
     @classmethod
     def settings_customise_sources(
