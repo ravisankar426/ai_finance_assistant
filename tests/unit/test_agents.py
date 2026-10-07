@@ -20,6 +20,7 @@ def _chunk(n: int, title: str) -> RetrievedChunk:
         title=title,
         category="investing",
         url=f"https://example.com/{n}",
+        section="Overview",
         text=f"{title} body text.",
         score=0.9,
     )
@@ -113,3 +114,19 @@ def test_placeholder_agent() -> None:
     """REQ-WF-01: every intent has a working route while specialists are being built."""
     result = PlaceholderAgent("news").run(_input())
     assert "News Synthesizer" in result.answer and result.error is None
+
+
+def test_qa_cites_each_article_once_and_reports_degraded_mode() -> None:
+    """REQ-RAG-05, REQ-LLM-05: two chunks of one article -> one citation; degraded flag surfaced."""
+    from dataclasses import replace
+
+    same_article = [
+        replace(CHUNKS[0], chunk_id="a1#0", degraded=True),
+        replace(CHUNKS[0], chunk_id="a1#1", section="Risks", degraded=True),
+        CHUNKS[1],
+    ]
+    model = ScriptedChatModel(reply="Point [1]. Another point [2]. ETFs [3].")
+    result = QAAgent(model, FakeRetriever(same_article)).run(_input())
+    assert [c.title for c in result.citations] == ["Index Funds", "ETFs"]
+    assert result.data["retrieval_degraded"] is True
+    assert "Index Funds — Risks" in seen_text(model)  # section shown to the model

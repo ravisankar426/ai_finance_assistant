@@ -15,10 +15,9 @@ from src.agents.qa import QAAgent
 from src.core.config import PROJECT_ROOT, Settings
 from src.core.errors import LLMUnavailableError
 from src.core.models import AGENT_NAMES
-from src.rag.knowledge_base import load_articles
-from src.rag.retriever import KeywordRetriever
 from src.workflow.router import RouteDecision, Router
 from tests.fakes import ScriptedChatModel, route_json
+from tests.kb import offline_retriever
 
 APP = str(PROJECT_ROOT / "src" / "web_app" / "ui" / "app.py")
 
@@ -35,7 +34,7 @@ def fake_graph(settings: Settings, monkeypatch: pytest.MonkeyPatch) -> None:
         agents: dict[str, Any] = {n: PlaceholderAgent(n) for n in AGENT_NAMES}
         agents["qa"] = QAAgent(
             ScriptedChatModel(reply="Index funds track an index [1]."),
-            KeywordRetriever(load_articles(settings.rag.knowledge_base_dir)),
+            offline_retriever(),
         )
         router = Router(
             ScriptedChatModel(reply=route_json(["qa"])).with_structured_output(RouteDecision)

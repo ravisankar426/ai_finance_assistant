@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check trace models requirements ui chat
+.PHONY: install lint format typecheck test check trace models requirements ui chat index eval live
 
 install:        ## install deps + git hooks
 	uv sync
@@ -34,3 +34,12 @@ ui:             ## run the Streamlit app
 
 chat:           ## live: chat with the assistant in the terminal (needs keys in .env)
 	uv run python scripts/chat_cli.py
+
+index:          ## rebuild the knowledge-base FAISS index (needs OPENAI_API_KEY)
+	uv run python scripts/build_index.py
+
+eval:           ## live: retrieval recall@5 / MRR for hybrid vs vector vs BM25
+	uv run python scripts/eval_retrieval.py --sweep
+
+live:           ## live: tests that call real APIs (router accuracy, retrieval recall)
+	uv run pytest -m live -q

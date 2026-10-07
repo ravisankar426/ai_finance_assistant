@@ -7,14 +7,17 @@ authors = [
 ]
 requires-python = ">=3.12,<3.14"
 dependencies = [
+    "faiss-cpu>=1.15.1",
     "langchain>=1.4.3",
     "langchain-core>=1.6.6",
     "langchain-google-genai>=4.4.0",
     "langchain-openai>=1.6.7",
     "langgraph>=1.2.13",
+    "numpy>=2.5.3",
     "pydantic>=2.13.5",
     "pydantic-settings>=2.15.0",
     "pyyaml>=6.0.3",
+    "rank-bm25>=0.2.2",
     "streamlit>=1.65.0",
     "structlog>=26.1.0",
 ]
@@ -63,7 +66,7 @@ packages = ["src"]
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["langchain.*", "langchain_core.*", "langchain_openai.*", "langchain_google_genai.*"]
+module = ["langchain.*", "langchain_core.*", "langchain_openai.*", "langchain_google_genai.*", "rank_bm25.*"]
 ignore_missing_imports = true
 
 # ---------------------------------------------------------------- pytest

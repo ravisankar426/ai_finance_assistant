@@ -56,7 +56,7 @@ the prescribed structure. The repo root folder is named `ai_finance_assistant/`,
 | ADR-03 | All math in deterministic Python tools | LLM math → unreliable (constitution P2) |
 | ADR-04 | Provider-agnostic LLM gateway: code asks for a **role** (`router`, `agent`, `guard`, `synthesizer`, `judge`); `config.yaml` maps each role to provider + model. **OpenAI is primary; Google Gemini is the cross-provider fallback.** Built on LangChain `init_chat_model` + `.with_fallbacks()` | Same-provider fallback → a provider outage takes everything down. Direct vendor SDKs → each provider has a different API, so switching means rewriting code. Custom HTTP adapters → reinvents what LangChain already standardizes |
 | ADR-05 | Embeddings: OpenAI `text-embedding-3-small`, **no cross-provider fallback**; if embeddings are down, retrieval degrades to BM25 only | Gemini embeddings as fallback → vectors from different models live in different spaces, so they can't query the same index. A second, parallel index is possible but doubles ingest work for little gain. Local sentence-transformers → ~2 GB torch dependency |
-| ADR-06 | **FAISS** (`IndexFlatIP` on normalized vectors = exact cosine search), saved to disk, via LangChain's FAISS wrapper. Category filtering = over-fetch (`fetch_k`) then filter on chunk metadata | Chroma → filters metadata inside the database, but adds a heavier dependency and its own storage format. Pinecone → network + account for ~1k chunks. IVF/HNSW indexes → approximate search only pays off above roughly 100k vectors; with ~1k, exact search takes under 1 ms |
+| ADR-06 | **FAISS** (`IndexFlatIP` on normalized vectors = exact cosine search) used **directly**: index saved with `faiss.write_index`, chunk metadata as JSON (no pickle). Category filtering = mask over chunk metadata | LangChain's FAISS wrapper → saves its docstore with pickle (`allow_dangerous_deserialization`), a code-execution risk if an index file is ever tampered with; direct FAISS + JSON removes the risk and a dependency. Chroma → heavier dependency and its own storage format. Pinecone → network + account for ~300 chunks. IVF/HNSW → approximate search only pays off around 100k+ vectors; exact search here is sub-millisecond |
 | ADR-14 | LLM-as-judge runs on **Gemini** (a different provider from the OpenAI generator) | Same model as judge → self-preference bias (models rate their own outputs higher). Human grading → too slow to repeat on every change |
 | ADR-07 | Hybrid BM25 + vector with RRF (k=60) | Vector-only → misses exact terms like "401(k)", "wash sale" |
 | ADR-08 | yfinance primary, Alpha Vantage fallback | Either alone → yfinance is unofficial and can break; AV free tier is tiny |
@@ -230,22 +230,42 @@ stops vendor imports from appearing outside `core/llm.py`.
 
 ## 9. RAG
 
-- Articles: `data/knowledge_base/<category>/<slug>.md` with YAML front-matter (REQ-RAG-01).
-- Chunking: split by Markdown headers, then recursive split at ~500 tokens with 75 overlap; each chunk is
-  prefixed with the article title (adds context for embedding).
-- Store: FAISS `IndexFlatIP` over L2-normalized vectors (inner product = cosine similarity). The index and
-  the docstore (chunk text + metadata) are saved to `data/index/` with `save_local`.
-- Ingest (REQ-RAG-02): embeddings are cached on disk, keyed by the chunk's content hash (LangChain
-  `CacheBackedEmbeddings`). On each ingest the flat index is **rebuilt** from cached vectors: only new or changed chunks
-  call the embeddings API. Rebuilding a ~1k-vector flat index takes milliseconds, which is simpler
-  and safer than deleting vectors in place.
-- Category filter (REQ-RAG-04): vector search with `fetch_k=50`, filtered on `metadata.category`, then top 20.
-  The BM25 index applies the same filter.
-- Retrieve: vector top-20 + BM25 top-20 → RRF → top-k (default 5) → threshold (REQ-QA-02).
-- Degraded mode (REQ-LLM-05): if the embeddings API fails, return BM25 results with `degraded=True`.
-- Security: LangChain's FAISS loader uses pickle (it requires `allow_dangerous_deserialization=True`). We only load
-  the index our own ingest job produced, from a path in config — never a file from a user.
-- Eval: `tests/evals/retrieval_set.yaml` (question → expected article ids), recall@5 and MRR.
+- **Knowledge base (REQ-RAG-01):** 60 Markdown articles in 6 categories under
+  `data/knowledge_base/<category>/<slug>.md`, front-matter validated by Pydantic on load (bad YAML,
+  missing fields, folder/category mismatch, duplicate ids all fail loudly). Sources are U.S. government
+  pages (SEC/Investor.gov, IRS, SSA, CFPB, FINRA, FDIC, BLS, BEA, Federal Reserve) plus CFA Institute,
+  MSCI, and Fidelity where no government page exists. Year-specific figures carry `tax_year` and are
+  cross-checked by a human reviewer against the cited sources (REQ-TX-02); the review checklist is
+  kept outside the repository as a private working document.
+- **Chunking:** one chunk per `##` section (sections are topical units); sections over 250 words split
+  into overlapping 40-word windows. The *embedding text* is prefixed with "Article title — Section" so
+  short chunks keep their context. Result: 297 chunks, median 37 words. Chunk ids `<article_id>#<n>`.
+- **Embeddings & cache (REQ-RAG-02):** `text-embedding-3-small` via the gateway; vectors cached in
+  `data/embedding_cache/<model>.npz` keyed by sha256(model + text). Only new/changed chunks call the API.
+- **Index lifecycle:** `load_or_build()` at startup compares a fingerprint (articles + model + chunking
+  settings) with the saved manifest → load (no API calls) or rebuild (cache makes it cheap). Built index:
+  `data/index/{index.faiss, chunks.json, manifest.json}` (git-ignored). `make index` forces a rebuild.
+- **Retrieval (REQ-RAG-03/04, REQ-QA-02):** category mask → FAISS ranking (meaning) + BM25 ranking
+  (exact terms, `rank_bm25`) → Reciprocal Rank Fusion (k=60; ranks only, so no score calibration) →
+  **cosine gate** (`min_cosine` 0.3): chunks below it are dropped; if none remain the agent answers
+  "not covered". The gate value was chosen from a sweep: recall is flat from 0.20 to 0.40, so 0.3 sits
+  mid-plateau; off-topic queries score ≤ 0.14 and on-topic ≥ 0.4 with real embeddings.
+- **Degraded mode (REQ-LLM-05):** a transient embeddings failure → BM25-only ranking gated by
+  IDF-weighted keyword coverage (≥ 0.5), results flagged `degraded=True` and surfaced in the agent's
+  `data`. Auth/permission/not-found errors (LangChain-mapped or raw HTTP 401/403/404) are re-raised.
+- **Citations:** the agent sees "[n] Title — Section (url)"; returned citations are deduplicated per
+  article.
+- **Evaluation (REQ-RAG-06):** `tests/evals/retrieval_set.yaml` — 40 cases (keyword, paraphrase,
+  jargon, off-topic). Results (2026-10-07, `make eval`):
+
+  | Method | recall@5 | MRR | paraphrase recall@5 | off-topic rejected |
+  |---|---|---|---|---|
+  | Hybrid (BM25 + FAISS, RRF) | **0.972** | 0.885 | **0.933** | **100%** |
+  | FAISS only | 0.944 | 0.911 | 0.867 | – |
+  | BM25 only (degraded) | 0.611 | 0.597 | 0.200 | 100% |
+
+  Hybrid wins on paraphrases; BM25 alone is a fallback, not a design. Known miss: the metaphor "how
+  bumpy is the ride?" doesn't reach the volatility article (articles were not tuned to the eval set).
 
 ## 10. Configuration
 

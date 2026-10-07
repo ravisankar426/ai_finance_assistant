@@ -35,6 +35,8 @@ distro==1.9.0
     # via
     #   google-genai
     #   langsmith
+faiss-cpu==1.15.1
+    # via ai-finance-assistant
 filetype==1.2.0
     # via langchain-google-genai
 google-auth==2.60.0
@@ -125,8 +127,11 @@ narwhals==2.26.0
     # via altair
 numpy==2.5.3
     # via
+    #   ai-finance-assistant
+    #   faiss-cpu
     #   pandas
     #   pydeck
+    #   rank-bm25
     #   streamlit
 openai==3.24.0
     # via langchain-openai
@@ -139,6 +144,7 @@ ormsgpack==1.12.2
 packaging==26.3
     # via
     #   altair
+    #   faiss-cpu
     #   langchain-core
     #   langsmith
     #   streamlit
@@ -183,6 +189,8 @@ pyyaml==6.0.3
     # via
     #   ai-finance-assistant
     #   langchain-core
+rank-bm25==0.2.2
+    # via ai-finance-assistant
 referencing==0.37.0
     # via
     #   jsonschema

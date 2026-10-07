@@ -30,10 +30,11 @@ from src.agents.placeholder import PlaceholderAgent
 from src.agents.qa import QAAgent
 from src.core.config import Settings, get_settings
 from src.core.guards import OUT_OF_SCOPE_REPLY, redact_user_text, with_disclaimer
-from src.core.llm import get_chat_model
+from src.core.llm import get_chat_model, get_embeddings
 from src.core.models import AGENT_LABELS, AGENT_NAMES, AgentResult, Citation, UserProfile
+from src.rag.index import load_or_build
 from src.rag.knowledge_base import load_articles
-from src.rag.retriever import KeywordRetriever
+from src.rag.retriever import HybridRetriever
 from src.utils.logging import get_logger, new_request_id
 from src.workflow.router import RouteDecision, Router
 from src.workflow.state import AgentInput, GraphState
@@ -199,8 +200,18 @@ def build_default_graph(settings: Settings | None = None) -> CompiledStateGraph[
     """Wire real models, the knowledge base, and an in-memory checkpointer."""
     settings = settings or get_settings()
     history = settings.workflow.history_messages
-    retriever = KeywordRetriever(
-        load_articles(settings.rag.knowledge_base_dir), min_score=settings.rag.min_score
+    rag = settings.rag
+    embeddings = get_embeddings(settings)
+    store = load_or_build(
+        load_articles(rag.knowledge_base_dir), embeddings, settings.llm.embeddings.model, rag
+    )
+    retriever = HybridRetriever(
+        store,
+        embeddings,
+        fetch_k=rag.fetch_k,
+        rrf_k=rag.rrf_k,
+        min_cosine=rag.min_cosine,
+        min_keyword_coverage=rag.min_keyword_coverage,
     )
     agents: dict[str, Agent] = {name: PlaceholderAgent(name) for name in AGENT_NAMES}
     agents["qa"] = QAAgent(
@@ -213,5 +224,5 @@ def build_default_graph(settings: Settings | None = None) -> CompiledStateGraph[
         get_chat_model("router", structured_output=RouteDecision, settings=settings),
         history_messages=history,
     )
-    log.info("graph_built", agents=sorted(agents), articles=len(retriever.articles))
+    log.info("graph_built", agents=sorted(agents), chunks=len(store.chunks))
     return build_graph(router=router, agents=agents)

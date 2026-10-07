@@ -29,7 +29,7 @@ and you can answer that day's checkpoint questions.
 **Milestone:** you can chat with a one-agent assistant in the browser.
 
 ## Day 3 — Wed Oct 7 · Knowledge base + RAG
-| T3.1 | Write about 60 articles across 6 categories (basics, investing, portfolio, retirement, tax, markets) from public sources: Investor.gov, FINRA, IRS | RAG-01, TX-02 |
+| T3.1 | ✅ 60 articles across 6 categories from public sources (SEC, IRS, SSA, CFPB, FINRA, FDIC…); figures checklist for human review | RAG-01, TX-02 |
 | T3.2 | Chunker, embedding cache keyed by content hash, FAISS index build/save/load | RAG-02, RAG-03, RAG-05 |
 | T3.3 | Hybrid retriever (BM25 + FAISS + RRF), category filter (over-fetch + metadata filter), threshold, BM25-only degraded mode | RAG-03, RAG-04, QA-02, LLM-05 |
 | T3.4 | Retrieval eval set (~40 questions) + recall@5 / MRR script | RAG-06 |

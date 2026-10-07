@@ -43,17 +43,29 @@ class RouteDecision(BaseModel):
 
 ROUTER_PROMPT = """You route messages for a personal-finance EDUCATION assistant.
 Choose every intent that applies to the user's latest message:
-- qa: general finance/investing concepts (what is an ETF, how bonds work, compound interest,
-  diversification as a concept, emergency funds).
+- qa: explaining finance/investing CONCEPTS — what an ETF is, how bonds work, compound interest,
+  diversification, emergency funds, budgeting, debt vs. investing, inflation, how indicators like
+  moving averages or the P/E ratio work, and whether an offer looks like an investment scam.
 - portfolio: analyzing the user's OWN holdings ("analyze my portfolio", "I own 10 AAPL and 5 MSFT").
-- market: current prices, quotes, market performance, indices, sectors, a ticker's trend.
+- market: CURRENT data — today's prices, quotes, how a specific ticker, index, or sector is
+  performing or trending right now.
 - goals: planning a goal — retirement, house, college, how much to save, risk profile.
 - news: recent financial news or headlines about a company or the market.
-- tax: US taxes and tax-advantaged accounts (401(k), IRA, Roth, HSA, 529, capital gains, wash sale).
-- out_of_scope: not about personal finance or investing at all (recipes, coding, sports...).
-Use several intents only when the message clearly asks about several things.
-Any question involving a tax-advantaged account (401(k), IRA, Roth, HSA, 529) includes "tax",
-even if it is also about goals or saving.
+- tax: US taxes and tax-advantaged accounts (401(k), IRA, Roth, HSA, 529, RMDs, capital gains,
+  dividends taxation, wash sale, tax brackets).
+- out_of_scope: not about personal finance, money, or investing at all (recipes, coding, sports...).
+  Questions about investment scams or fraud are IN scope (qa).
+Rules:
+- Use several intents only when the message clearly asks about several different things.
+- Tax questions go to "tax" alone — do not add "qa" for them. If a message involves a
+  tax-advantaged account AND another need (e.g. retirement planning), use "tax" plus that intent.
+- A concept question about an indicator ("how do moving averages work?") is "qa"; asking for a
+  specific ticker's current values ("what is AAPL's 50-day average?") is "market".
+Examples:
+- "What is the Roth IRA income limit?" -> [tax]
+- "Will putting more into an IRA help me retire by 60?" -> [tax, goals]
+- "Is a promise of guaranteed 30% returns a scam?" -> [qa]
+- "How is TSLA doing today and what's the latest news?" -> [market, news]
 Also rewrite the latest message as a standalone question, resolving pronouns from the history."""
 
 

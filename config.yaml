@@ -14,8 +14,15 @@ workflow:
 
 rag:
   knowledge_base_dir: src/data/knowledge_base
-  top_k: 4
-  min_score: 0.2           # below this relevance, answer "not covered" instead of guessing
+  index_dir: src/data/index               # FAISS index + chunk metadata (git-ignored, rebuilt)
+  embedding_cache_dir: src/data/embedding_cache   # vectors keyed by content hash (git-ignored)
+  chunk_max_words: 250     # sections longer than this are split with overlap
+  chunk_overlap_words: 40
+  top_k: 4                 # chunks given to the agent
+  fetch_k: 50              # candidates per method (vector, BM25) before fusion
+  rrf_k: 60                # Reciprocal Rank Fusion constant (standard value)
+  min_cosine: 0.3          # vector-similarity gate: below -> "not covered" (calibrated on the eval set)
+  min_keyword_coverage: 0.5  # gate used only when embeddings are down (BM25-only mode)
 
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).

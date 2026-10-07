@@ -77,12 +77,16 @@ class QAAgent:
             agent=self.name,
             answer=answer,
             citations=self._cited(answer, chunks),
-            data={"retrieval_scores": [c.score for c in chunks]},
+            data={
+                "retrieval_scores": [c.score for c in chunks],
+                "retrieval_degraded": any(c.degraded for c in chunks),  # REQ-LLM-05
+            },
         )
 
     def _prompt(self, inp: AgentInput, chunks: list[RetrievedChunk]) -> list[AnyMessage]:
         sources = "\n\n".join(
-            f"[{i}] {c.title} ({c.url})\n{c.text}" for i, c in enumerate(chunks, start=1)
+            f"[{i}] {c.title} — {c.section} ({c.url})\n{c.text}"
+            for i, c in enumerate(chunks, start=1)
         )
         system = SYSTEM_PROMPT.format(
             level_style=_LEVEL_STYLE[inp["profile"].knowledge_level], sources=sources
@@ -92,7 +96,13 @@ class QAAgent:
 
     @staticmethod
     def _cited(answer: str, chunks: list[RetrievedChunk]) -> list[Citation]:
-        """Citations for the [n] markers in the answer; all sources if the model cited none."""
+        """Citations for the [n] markers (all sources if none), one per article."""
         numbers = {int(n) for n in _CITE.findall(answer) if 1 <= int(n) <= len(chunks)}
         used = [chunks[n - 1] for n in sorted(numbers)] or chunks
-        return [c.citation() for c in used]
+        seen: set[str] = set()
+        citations = []
+        for c in used:
+            if c.article_id not in seen:  # several chunks of one article -> one citation
+                seen.add(c.article_id)
+                citations.append(c.citation())
+        return citations

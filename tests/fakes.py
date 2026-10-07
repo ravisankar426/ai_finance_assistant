@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections.abc import Sequence
 from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.embeddings import Embeddings
 from langchain_core.exceptions import ModelAPIError
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
@@ -88,3 +90,42 @@ class FakeRetriever:
     def retrieve(self, query: str, *, k: int, **filters: Any) -> list[Any]:
         self.calls.append({"query": query, "k": k, **filters})
         return self.chunks[:k]
+
+
+class HashingEmbeddings(Embeddings):
+    """Deterministic offline embeddings: hashed bag-of-words vectors.
+
+    Cosine similarity reflects shared (tokenized) words, so ranking and gating logic can be
+    tested without an API. ``fail_with`` simulates an embeddings outage on queries.
+    """
+
+    def __init__(self, dim: int = 4096, fail_with: BaseException | None = None) -> None:
+        self.dim = dim
+        self.fail_with = fail_with
+        self.document_calls = 0
+
+    def _vector(self, text: str) -> list[float]:
+        from src.rag.text import tokenize
+
+        vec = [0.0] * self.dim
+        for tok in tokenize(text):
+            h = int(hashlib.md5(tok.encode()).hexdigest(), 16)  # noqa: S324 — not security
+            vec[h % self.dim] += 1.0
+        return vec if any(vec) else [1e-6] * self.dim
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        self.document_calls += len(texts)
+        return [self._vector(t) for t in texts]
+
+    def embed_query(self, text: str) -> list[float]:
+        if self.fail_with is not None:
+            raise self.fail_with
+        return self._vector(text)
+
+
+class StatusError(Exception):
+    """An SDK-style error carrying an HTTP status code (unmapped by LangChain)."""
+
+    def __init__(self, status_code: int) -> None:
+        super().__init__(f"HTTP {status_code}")
+        self.status_code = status_code

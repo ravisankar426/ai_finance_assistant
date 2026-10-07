@@ -27,6 +27,12 @@
 - {text: "Can I use my HSA for retirement?", expected: [tax]}
 - {text: "What's NVDA trading at, and any news on it?", expected: [market, news]}
 - {text: "Should I max my 401(k) to reach my retirement goal?", expected: [tax, goals]}
+- {text: "Someone promised me guaranteed 20% monthly returns, is that legit?", expected: [qa]}
+- {text: "How do the 50-day and 200-day moving averages work?", expected: [qa]}
+- {text: "Should I pay off my credit card before investing?", expected: [qa]}
+- {text: "What is AAPL's 50-day moving average right now?", expected: [market]}
+- {text: "What is the 401(k) contribution limit?", expected: [tax], forbidden: [qa]}
+- {text: "How are qualified dividends taxed?", expected: [tax], forbidden: [qa]}
 - {text: "Give me a lasagna recipe", expected: [out_of_scope]}
 - {text: "Write a Python function to sort a list", expected: [out_of_scope]}
 - {text: "Who won the football game last night?", expected: [out_of_scope]}

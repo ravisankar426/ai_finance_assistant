@@ -1,0 +1,53 @@
+# Retrieval evaluation set (REQ-RAG-06).
+# `expected`: article ids that count as a correct hit (any one within the top 5 = hit).
+# `kind`: keyword (shares words with the article) | paraphrase (meaning only) | jargon (exact term)
+#         | off_topic (expected: [] -> retriever should return nothing).
+# `exclude`: categories to exclude, as the agents do (QA excludes tax; Tax uses only tax).
+
+# --- keyword ---------------------------------------------------------------------------------
+- {q: "What is an index fund?", expected: [investing-index-funds], kind: keyword}
+- {q: "How do bonds work?", expected: [basics-bonds], kind: keyword}
+- {q: "What is dollar-cost averaging?", expected: [investing-dollar-cost-averaging], kind: keyword}
+- {q: "How does compound interest work?", expected: [basics-compound-interest], kind: keyword}
+- {q: "What is a target date fund?", expected: [investing-target-date-funds], kind: keyword}
+- {q: "What is a REIT?", expected: [investing-reits], kind: keyword}
+- {q: "How does Social Security full retirement age work?", expected: [retirement-social-security-basics], kind: keyword}
+- {q: "What is the difference between a market order and a limit order?", expected: [investing-order-types], kind: keyword}
+- {q: "What is a bear market?", expected: [markets-bull-and-bear-markets], kind: keyword}
+- {q: "What does the P/E ratio tell me?", expected: [markets-earnings-and-pe-ratio], kind: keyword}
+- {q: "What are the 11 stock market sectors?", expected: [markets-stock-market-sectors], kind: keyword}
+- {q: "What is the Sharpe ratio?", expected: [portfolio-sharpe-ratio], kind: keyword}
+
+# --- paraphrase (little or no word overlap) -------------------------------------------------
+- {q: "How can I keep more of my returns instead of paying them to fund companies?", expected: [investing-fees-and-expense-ratios, investing-index-funds], kind: paraphrase}
+- {q: "How much cash should I keep aside for unexpected bills?", expected: [basics-emergency-fund], kind: paraphrase}
+- {q: "Why is putting all my money in one company dangerous?", expected: [portfolio-concentration-risk, portfolio-diversification-and-asset-allocation], kind: paraphrase}
+- {q: "My stocks grew and now my mix is off, what should I do?", expected: [portfolio-rebalancing], kind: paraphrase}
+- {q: "Why does my money buy less every year?", expected: [basics-inflation], kind: paraphrase}
+- {q: "Someone promised me guaranteed 20% monthly returns, is that legit?", expected: [basics-investment-fraud-red-flags], kind: paraphrase}
+- {q: "How do I avoid running out of money after I stop working?", expected: [retirement-retirement-withdrawals], kind: paraphrase}
+- {q: "My company offers free money if I contribute to my retirement plan, how does that work?", expected: [retirement-employer-401k-match], kind: paraphrase}
+- {q: "How bumpy is the ride with this investment?", expected: [portfolio-volatility-and-drawdown], kind: paraphrase}
+- {q: "Does my portfolio move more than the overall market?", expected: [portfolio-beta], kind: paraphrase}
+- {q: "Should I pay off my credit cards before investing?", expected: [basics-high-interest-debt], kind: paraphrase}
+- {q: "What happens to my investments when the central bank changes borrowing costs?", expected: [markets-interest-rates-and-the-fed], kind: paraphrase}
+- {q: "How do I figure out how much risk I can handle?", expected: [portfolio-risk-tolerance], kind: paraphrase}
+- {q: "Is there an app that picks and manages investments for me automatically?", expected: [investing-robo-advisers], kind: paraphrase}
+- {q: "The market dropped a lot this week and I'm scared, what should I do?", expected: [markets-market-volatility, markets-bull-and-bear-markets], kind: paraphrase}
+
+# --- jargon / exact terms -------------------------------------------------------------------
+- {q: "What is the 401(k) contribution limit?", expected: [tax-401k-plans], kind: jargon}
+- {q: "Roth IRA income phase-out", expected: [tax-roth-ira], kind: jargon}
+- {q: "wash sale 30 days", expected: [tax-wash-sale-rule], kind: jargon}
+- {q: "HSA triple tax advantage", expected: [tax-hsa], kind: jargon}
+- {q: "RMD age 73", expected: [tax-required-minimum-distributions], kind: jargon}
+- {q: "529 to Roth rollover", expected: [tax-529-plans], kind: jargon}
+- {q: "qualified dividend holding period", expected: [tax-qualified-dividends], kind: jargon}
+- {q: "SIPC protection limit", expected: [investing-brokerage-accounts], kind: jargon}
+- {q: "50-day and 200-day moving average golden cross", expected: [markets-moving-averages], kind: jargon}
+
+# --- off-topic: nothing should be returned --------------------------------------------------
+- {q: "How do I bake sourdough bread?", expected: [], kind: off_topic}
+- {q: "Who won the World Cup?", expected: [], kind: off_topic}
+- {q: "What is a good Python web framework?", expected: [], kind: off_topic}
+- {q: "How do I fix a flat bicycle tire?", expected: [], kind: off_topic}

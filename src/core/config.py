@@ -101,16 +101,26 @@ class WorkflowConfig(BaseModel):
 
 
 class RAGConfig(BaseModel):
-    """Knowledge-base retrieval settings."""
+    """Knowledge-base chunking, indexing, and hybrid retrieval settings."""
 
     knowledge_base_dir: Path = Path("src/data/knowledge_base")
+    index_dir: Path = Path("src/data/index")
+    embedding_cache_dir: Path = Path("src/data/embedding_cache")
+    chunk_max_words: int = Field(default=250, ge=50)
+    chunk_overlap_words: int = Field(default=40, ge=0)
     top_k: int = Field(default=4, ge=1)
-    min_score: float = Field(default=0.2, ge=0, le=1)  # below this -> "not covered" (REQ-QA-02)
+    fetch_k: int = Field(default=50, ge=1)  # candidates per method before fusion/filtering
+    rrf_k: int = Field(default=60, ge=1)  # Reciprocal Rank Fusion constant
+    # Relevance gates (REQ-QA-02): below these, a chunk is "not relevant".
+    min_cosine: float = Field(default=0.3, ge=0, le=1)
+    min_keyword_coverage: float = Field(default=0.5, ge=0, le=1)  # degraded (BM25-only) mode
 
     @model_validator(mode="after")
     def _resolve_paths(self) -> RAGConfig:
-        if not self.knowledge_base_dir.is_absolute():
-            self.knowledge_base_dir = PROJECT_ROOT / self.knowledge_base_dir
+        for name in ("knowledge_base_dir", "index_dir", "embedding_cache_dir"):
+            path = getattr(self, name)
+            if not path.is_absolute():
+                setattr(self, name, PROJECT_ROOT / path)
         return self
 
 

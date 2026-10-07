@@ -90,7 +90,8 @@ def test_keyword_router_baseline_accuracy() -> None:
 
     Keywords can't recognize out-of-scope text (they default to qa), so those cases are excluded.
     """
-    in_scope = [c for c in CASES if c["expected"] != ["out_of_scope"]]
+    # Keywords can't judge concept-vs-data nuance; baseline covers the original core cases.
+    in_scope = [c for c in CASES if c["expected"] != ["out_of_scope"] and "forbidden" not in c]
     hits = [c for c in in_scope if set(c["expected"]) <= set(keyword_route(c["text"]).intents)]
     accuracy = len(hits) / len(in_scope)
     assert accuracy >= 0.8, f"keyword accuracy {accuracy:.0%}"
@@ -105,7 +106,8 @@ def test_live_llm_router_accuracy() -> None:
     misses = []
     for case in CASES:
         intents = router(_state(case["text"]))["intents"]
-        if not set(case["expected"]) <= set(intents):
+        forbidden = set(case.get("forbidden", []))
+        if not set(case["expected"]) <= set(intents) or forbidden & set(intents):
             misses.append((case["text"], case["expected"], intents))
     accuracy = 1 - len(misses) / len(CASES)
     assert accuracy >= 0.9, f"accuracy {accuracy:.0%}; misses: {misses}"

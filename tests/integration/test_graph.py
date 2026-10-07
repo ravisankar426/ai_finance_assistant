@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import warnings
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -15,12 +16,11 @@ from src.agents.qa import QAAgent
 from src.core.config import Settings
 from src.core.guards import DISCLAIMER
 from src.core.models import AGENT_NAMES, AgentResult, UserProfile
-from src.rag.knowledge_base import load_articles
-from src.rag.retriever import KeywordRetriever
 from src.workflow.graph import build_graph
 from src.workflow.router import RouteDecision, Router
 from src.workflow.state import AgentInput, add_or_reset
-from tests.fakes import ScriptedChatModel, route_json, seen_text
+from tests.fakes import HashingEmbeddings, ScriptedChatModel, route_json, seen_text
+from tests.kb import offline_retriever, rag_config
 
 
 def make_graph(
@@ -32,7 +32,7 @@ def make_graph(
 ) -> tuple[Any, ScriptedChatModel, ScriptedChatModel]:
     router_model = ScriptedChatModel(reply=route_json(intents))
     qa_model = ScriptedChatModel(reply=qa_reply)
-    retriever = KeywordRetriever(load_articles(settings.rag.knowledge_base_dir), min_score=0.2)
+    retriever = offline_retriever()
     agents: dict[str, Any] = {n: PlaceholderAgent(n) for n in AGENT_NAMES}
     agents["qa"] = QAAgent(qa_model, retriever)
     agents.update(extra_agents or {})
@@ -136,7 +136,7 @@ def test_config_error_fails_the_turn_loudly(settings: Settings) -> None:
         extra_agents={
             "qa": QAAgent(
                 qa_model_fail,
-                KeywordRetriever(load_articles(settings.rag.knowledge_base_dir)),
+                offline_retriever(),
             )
         },
     )
@@ -181,7 +181,7 @@ def test_add_or_reset_reducer() -> None:
 
 
 def test_build_default_graph_wires_real_parts(
-    settings: Settings, monkeypatch: pytest.MonkeyPatch
+    settings: Settings, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """REQ-LLM-01: the default graph gets its models from the gateway, built at startup."""
     built: list[str] = []
@@ -196,6 +196,9 @@ def test_build_default_graph_wires_real_parts(
         )
 
     monkeypatch.setattr(graph_module, "get_chat_model", fake_get_chat_model)
+    monkeypatch.setattr(graph_module, "get_embeddings", lambda _settings: HashingEmbeddings())
+    settings.rag = rag_config(tmp_path)
     graph = graph_module.build_default_graph(settings)
+    assert (tmp_path / "index" / "index.faiss").exists()  # built and saved at startup
     assert sorted(built) == ["agent", "router"]
     assert _ask(graph, "What is an index fund?")["final_answer"].startswith("Answer [1].")
