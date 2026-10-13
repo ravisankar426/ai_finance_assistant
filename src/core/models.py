@@ -10,6 +10,7 @@ AgentName = Literal["qa", "portfolio", "market", "goals", "news", "tax"]
 Intent = Literal["qa", "portfolio", "market", "goals", "news", "tax", "out_of_scope"]
 
 AGENT_NAMES: tuple[AgentName, ...] = ("qa", "portfolio", "market", "goals", "news", "tax")
+STATE_UPDATE_KEYS = frozenset({"portfolio", "profile"})
 
 AGENT_LABELS: dict[str, str] = {
     "qa": "Finance Q&A",
@@ -40,6 +41,17 @@ class AgentResult(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)  # structured payload for UI charts
     error: str | None = None  # set when the agent degraded (REQ-WF-05)
     follow_up_question: str | None = None  # set when inputs are missing (REQ-WF-10)
+    # Remembered across turns, e.g. {"portfolio": [...]} or {"profile": ...}. Only keys in
+    # STATE_UPDATE_KEYS are applied, so an agent can't overwrite arbitrary graph state.
+    state_updates: dict[str, Any] = Field(default_factory=dict)
+
+
+class Holding(BaseModel):
+    """One position the user holds (REQ-PF-01)."""
+
+    ticker: str
+    quantity: float = Field(gt=0)
+    cost_basis: float | None = Field(default=None, gt=0, description="Price paid per share")
 
 
 class UserProfile(BaseModel):

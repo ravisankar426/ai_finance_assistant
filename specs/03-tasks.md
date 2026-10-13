@@ -53,10 +53,10 @@ and you can answer that day's checkpoint questions.
 ## Weekend Oct 10–11 · Buffer / catch-up / re-read code
 
 ## Day 6 — Mon Oct 12 · Portfolio + Goals
-| T6.1 | Portfolio engine: weights, allocation, HHI, vol, beta, Sharpe, drawdown, P&L, flags | PF-02, PF-03, PF-05 |
-| T6.2 | Holding parsing from chat / CSV; sample portfolio CSVs; Portfolio agent | PF-01, PF-04, DEL-02 |
-| T6.3 | Risk questionnaire, goal engine (FV, PMT, inflation, scenarios, gap levers), model allocations | GP-01..05 |
-| T6.4 | Goals agent; property-based tests for the math | GP-01..05 |
+| T6.1 | ✅ Portfolio engine: weights, allocation, HHI, vol, beta, Sharpe, drawdown, P&L, flags | PF-02, PF-03, PF-05 |
+| T6.2 | ✅ Holding parsing from chat / CSV; sample portfolio CSVs; Portfolio agent | PF-01, PF-04, DEL-02 |
+| T6.3 | ✅ Risk questionnaire, goal engine (FV, PMT, inflation, scenarios, gap levers), model allocations | GP-01..05 |
+| T6.4 | ✅ Goals agent; property-based tests for the math | GP-01..05 |
 **Learn (finance primer II):** diversification, beta, Sharpe, drawdown, time value of money, risk tolerance.
 
 ## Day 7 — Tue Oct 13 · Full orchestration + guardrails + API

@@ -178,6 +178,47 @@ class MarketConfig(BaseModel):
         return self
 
 
+class PortfolioConfig(BaseModel):
+    """Portfolio-analysis thresholds and assumptions (REQ-PF-02, REQ-PF-03)."""
+
+    max_single_weight: float = Field(default=0.25, gt=0, le=1)  # flag a holding above this
+    max_sector_weight: float = Field(default=0.40, gt=0, le=1)  # flag a stock sector above this
+    risk_free_rate: float = Field(default=0.04, ge=0)  # annual; for the Sharpe ratio
+    benchmark: str = "SPY"  # beta is measured against this ETF
+    max_holdings: int = Field(default=25, ge=1)
+
+
+class ScenarioReturns(BaseModel):
+    """Assumed nominal annual returns for one risk profile (educational assumptions)."""
+
+    pessimistic: float
+    base: float
+    optimistic: float
+
+
+class PlanningConfig(BaseModel):
+    """Goal-planning assumptions (REQ-GP-01..05). All are illustrative, not forecasts."""
+
+    inflation: float = Field(default=0.03, ge=0)
+    returns: dict[str, ScenarioReturns] = Field(
+        default_factory=lambda: {
+            "conservative": ScenarioReturns(pessimistic=0.025, base=0.04, optimistic=0.055),
+            "moderate": ScenarioReturns(pessimistic=0.035, base=0.06, optimistic=0.08),
+            "aggressive": ScenarioReturns(pessimistic=0.04, base=0.075, optimistic=0.10),
+        }
+    )
+    # Illustrative stock/bond/cash mixes (percent) by risk profile, before horizon adjustment.
+    allocations: dict[str, dict[str, int]] = Field(
+        default_factory=lambda: {
+            "conservative": {"stocks": 30, "bonds": 60, "cash": 10},
+            "moderate": {"stocks": 60, "bonds": 35, "cash": 5},
+            "aggressive": {"stocks": 85, "bonds": 15, "cash": 0},
+        }
+    )
+    short_horizon_years: int = Field(default=3, ge=1)  # below: money mostly in cash/bonds
+    medium_horizon_years: int = Field(default=7, ge=1)  # below: shift stocks toward bonds
+
+
 class Settings(BaseSettings):
     """Root settings object. Get it via :func:`get_settings`."""
 
@@ -192,6 +233,8 @@ class Settings(BaseSettings):
     workflow: WorkflowConfig = Field(default_factory=WorkflowConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
     market: MarketConfig = Field(default_factory=MarketConfig)
+    portfolio: PortfolioConfig = Field(default_factory=PortfolioConfig)
+    planning: PlanningConfig = Field(default_factory=PlanningConfig)
 
     # Secrets — env/.env only. SecretStr keeps them out of repr() and logs.
     openai_api_key: SecretStr | None = None

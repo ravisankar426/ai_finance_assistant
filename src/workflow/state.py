@@ -12,12 +12,12 @@ Reducers decide how a node's return value is merged into the state:
 
 from __future__ import annotations
 
-from typing import Annotated, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
 
-from src.core.models import AgentResult, Citation, Intent, UserProfile
+from src.core.models import AgentResult, Citation, Holding, Intent, UserProfile
 
 
 def add_or_reset(
@@ -34,6 +34,7 @@ class GraphState(TypedDict, total=False):
 
     messages: Annotated[list[AnyMessage], add_messages]
     profile: UserProfile
+    portfolio: list[Holding]  # remembered holdings (REQ-PF-01), from chat or the Portfolio tab
     request_id: str
     question: str  # standalone version of the latest user message (router output)
     intents: list[Intent]
@@ -50,3 +51,4 @@ class AgentInput(TypedDict):
     messages: list[AnyMessage]
     profile: UserProfile
     request_id: str
+    portfolio: NotRequired[list[Holding] | None]

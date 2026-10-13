@@ -200,7 +200,7 @@ def test_build_default_graph_wires_real_parts(
     settings.rag = rag_config(tmp_path)
     graph = graph_module.build_default_graph(settings)
     assert (tmp_path / "index" / "index.faiss").exists()  # built and saved at startup
-    assert sorted(built) == ["agent", "router", "router"]  # router + ticker extractor
+    assert sorted(built) == ["agent"] + ["router"] * 4  # router + ticker/holdings/goal extraction
     assert _ask(graph, "What is an index fund?")["final_answer"].startswith("Answer [1].")
 
 
@@ -216,3 +216,32 @@ def test_follow_up_question_reaches_the_user(settings: Settings) -> None:
     graph, _, _ = make_graph(settings, intents=["market"], extra_agents={"market": Asks()})
     out = _ask(graph, "What's the stock price?")
     assert "**Quick question:** Which ticker?" in out["final_answer"]
+
+
+def test_state_updates_persist_across_turns_and_are_whitelisted(settings: Settings) -> None:
+    """REQ-WF-04, REQ-WF-08: agents can remember holdings/profile, but nothing else."""
+    from src.core.models import Holding
+
+    class Remembers:
+        name = "portfolio"
+
+        def run(self, inp: AgentInput) -> AgentResult:
+            seen = inp.get("portfolio")
+            return AgentResult(
+                agent="portfolio",
+                answer=f"saw {len(seen) if seen else 0} holdings",
+                state_updates={
+                    "portfolio": [Holding(ticker="AAPL", quantity=1)],
+                    "intents": ["hacked"],  # not whitelisted -> ignored
+                },
+            )
+
+    graph, _, _ = make_graph(
+        settings, intents=["portfolio"], extra_agents={"portfolio": Remembers()}
+    )
+    first = _ask(graph, "I own 1 AAPL", thread="mem")
+    assert first["final_answer"].startswith("saw 0 holdings")
+    assert first["portfolio"] == [Holding(ticker="AAPL", quantity=1)]
+    assert first["intents"] == ["portfolio"]
+    second = _ask(graph, "how is it doing?", thread="mem")
+    assert second["final_answer"].startswith("saw 1 holdings")

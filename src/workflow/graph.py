@@ -27,15 +27,25 @@ from langgraph.types import Send
 
 from src.agents.base import Agent, run_safely
 from src.agents.entities import TickerExtractor, TickerRequest
+from src.agents.goals import GoalRequest, GoalsAgent
 from src.agents.market import MarketAgent
 from src.agents.news import NewsAgent
 from src.agents.placeholder import PlaceholderAgent
+from src.agents.portfolio import HoldingsRequest, PortfolioAgent
 from src.agents.qa import QAAgent
 from src.agents.tax import TaxAgent
 from src.core.config import Settings, get_settings
 from src.core.guards import OUT_OF_SCOPE_REPLY, redact_user_text, with_disclaimer
 from src.core.llm import get_chat_model, get_embeddings
-from src.core.models import AGENT_LABELS, AGENT_NAMES, AgentResult, Citation, UserProfile
+from src.core.models import (
+    AGENT_LABELS,
+    AGENT_NAMES,
+    STATE_UPDATE_KEYS,
+    AgentResult,
+    Citation,
+    Holding,
+    UserProfile,
+)
 from src.data.market_service import build_market_service
 from src.rag.index import load_or_build
 from src.rag.knowledge_base import load_articles
@@ -97,6 +107,7 @@ def dispatch(state: GraphState) -> list[Send]:
             "messages": state["messages"],
             "profile": state["profile"],
             "request_id": state["request_id"],
+            "portfolio": state.get("portfolio"),
         }
         node = OUT_OF_SCOPE_NODE if intent == "out_of_scope" else agent_node_name(intent)
         sends.append(Send(node, payload))
@@ -112,7 +123,10 @@ def make_agent_node(agent: Agent) -> AgentNode:
     """Wrap an agent so its result lands in ``agent_results`` (fan-in via the reducer)."""
 
     def node(state: AgentInput) -> dict[str, Any]:
-        return {"agent_results": [run_safely(agent, state)]}
+        result = run_safely(agent, state)
+        # Agents may persist whitelisted facts (holdings, profile) for later turns.
+        updates = {k: v for k, v in result.state_updates.items() if k in STATE_UPDATE_KEYS}
+        return {"agent_results": [result], **updates}
 
     node.__name__ = agent_node_name(agent.name)
     return node
@@ -192,7 +206,7 @@ def build_graph(
 # Our own types stored in checkpoints. LangGraph refuses to deserialize unregistered classes
 # (a safety measure against loading arbitrary objects from a tampered store), so we allowlist
 # exactly these.
-CHECKPOINT_TYPES: tuple[type[Any], ...] = (AgentResult, Citation, UserProfile)
+CHECKPOINT_TYPES: tuple[type[Any], ...] = (AgentResult, Citation, Holding, UserProfile)
 
 
 def checkpoint_serializer() -> JsonPlusSerializer:
@@ -228,6 +242,20 @@ def build_default_graph(settings: Settings | None = None) -> CompiledStateGraph[
         get_chat_model("router", structured_output=TickerRequest, settings=settings)
     )
     agents["market"] = MarketAgent(agent_model, extractor, market, retriever)
+    agents["portfolio"] = PortfolioAgent(
+        agent_model,
+        get_chat_model("router", structured_output=HoldingsRequest, settings=settings),
+        market,
+        retriever,
+        settings.portfolio,
+    )
+    agents["goals"] = GoalsAgent(
+        agent_model,
+        get_chat_model("router", structured_output=GoalRequest, settings=settings),
+        retriever,
+        settings.planning,
+        history_messages=history,
+    )
     agents["news"] = NewsAgent(
         agent_model,
         extractor,

@@ -48,6 +48,26 @@ market:
   news_lookback_days: 7      # headlines older than this are dropped
   fixture_dir: src/data/fixtures/market   # recorded data: offline demo via MARKET__PROVIDERS='["fixture"]'
 
+portfolio:                   # REQ-PF-02/03 — educational thresholds, not rules
+  max_single_weight: 0.25    # flag any single holding above 25% of the portfolio
+  max_sector_weight: 0.40    # flag any stock sector above 40%
+  risk_free_rate: 0.04       # annual, for the Sharpe ratio (approx. short-term Treasury yield)
+  benchmark: SPY             # beta measured against the S&P 500 ETF
+  max_holdings: 25
+
+planning:                    # REQ-GP-01..05 — illustrative assumptions, not forecasts
+  inflation: 0.03
+  returns:                   # nominal annual returns per scenario
+    conservative: {pessimistic: 0.025, base: 0.04, optimistic: 0.055}
+    moderate:     {pessimistic: 0.035, base: 0.06, optimistic: 0.08}
+    aggressive:   {pessimistic: 0.04,  base: 0.075, optimistic: 0.10}
+  allocations:               # stock/bond/cash percent before horizon adjustment
+    conservative: {stocks: 30, bonds: 60, cash: 10}
+    moderate:     {stocks: 60, bonds: 35, cash: 5}
+    aggressive:   {stocks: 85, bonds: 15, cash: 0}
+  short_horizon_years: 3     # goals sooner than this: mostly cash/short-term bonds
+  medium_horizon_years: 7    # goals sooner than this: tilt toward bonds
+
 llm:
   # Code asks for a ROLE; this table decides which provider/model serves it (REQ-LLM-02).
   # Model IDs: confirm against your keys with `uv run python scripts/check_models.py`.

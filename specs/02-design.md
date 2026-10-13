@@ -78,6 +78,7 @@ class AgentResult(BaseModel):
     data: dict          # structured payload for UI charts (metrics, projections…)
     error: str | None   # set when the agent degraded (REQ-WF-05)
     follow_up_question: str | None   # set when inputs are missing (REQ-WF-10)
+    state_updates: dict              # remembered across turns; only "portfolio"/"profile" applied
 class UserProfile(BaseModel):
     knowledge_level: Literal["beginner","intermediate","advanced"] = "beginner"
     risk_tolerance: Literal["conservative","moderate","aggressive"] | None
@@ -141,9 +142,9 @@ Tool-calling loops are kept to ≤ 3 iterations.
 | Agent | Compute (tools) | Retrieve (KB categories) | LLM role |
 |---|---|---|---|
 | QA | – | all except tax | Answer from chunks, cite, suggest what to learn next |
-| Portfolio | market history → `portfolio_engine` | portfolio | Explain metrics, flags, educational recommendations |
+| Portfolio | holdings from the message (structured output, regex fallback), the remembered portfolio, or a CSV → `portfolio_engine` (weights, asset classes, GICS sectors, HHI, volatility, max drawdown, Sharpe, beta vs SPY, unrealized P&L, threshold flags) | portfolio | Explain the fact block; educational, non-security-specific observations only |
 | Market | ticker extraction → `market_service` quotes/history → `market_analytics.trend_snapshot`; overview of 4 index + 11 sector ETFs (plus SPY's trend) | markets, portfolio | Explain the computed fact block; a single day's move is never called a trend; no predictions; deterministic data-source/staleness footer |
-| Goals | `risk_profile`, `goal_engine` | retirement, portfolio | Explain plan, risk fit, levers |
+| Goals | goal parameters via structured output over recent turns; risk profile from the message, the remembered profile, or the questionnaire → `goal_engine` (inflation-adjusted target, required monthly saving under 3 scenarios, projections, gap levers, horizon-adjusted model allocation) | retirement, portfolio, basics | Explain the plan; allocation is illustrative; asks for missing amount/horizon/risk |
 | News | ticker extraction → `market_service.get_news` → `core.news.select_headlines` (lookback, relevance, focus ranking, dedupe) | markets | Summarize **headlines only** (free sources give no article text) with each headline linked; no predictions |
 | Tax | – | tax | Explain, cite, state tax year, refer to a professional |
 
@@ -169,6 +170,12 @@ Agents never call each other directly. They communicate only through the shared 
 
 Why this design: agents stay separate (clean separation of concerns), each can be tested with a
 hand-built state dict, and adding a seventh agent means adding one node and one router label.
+
+**Memory beyond messages (REQ-WF-04, REQ-WF-08):** agents return `state_updates`; the agent-node
+wrapper applies only whitelisted keys (`portfolio`, `profile`), so the Portfolio agent remembers
+holdings and the Goals agent remembers a stated risk tolerance and goals. The router adds two
+deterministic guards on top of the LLM: precise tax terms → Tax; a reference ("it", "my") plus a
+portfolio topic, when holdings are remembered → Portfolio.
 
 ## 7b. Scalability
 

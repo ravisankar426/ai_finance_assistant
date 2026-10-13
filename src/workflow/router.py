@@ -46,7 +46,8 @@ Choose every intent that applies to the user's latest message:
 - qa: explaining finance/investing CONCEPTS — what an ETF is, how bonds work, compound interest,
   diversification, emergency funds, budgeting, debt vs. investing, inflation, how indicators like
   moving averages or the P/E ratio work, and whether an offer looks like an investment scam.
-- portfolio: analyzing the user's OWN holdings ("analyze my portfolio", "I own 10 AAPL and 5 MSFT").
+- portfolio: analyzing the user's OWN holdings ("analyze my portfolio", "I own 10 AAPL and 5 MSFT"),
+  including follow-ups about a portfolio shared earlier ("is it diversified?", "its beta?").
 - market: CURRENT data — today's prices, quotes, how a specific ticker, index, or sector is
   performing or trending right now.
 - goals: planning a goal — retirement, house, college, how much to save, risk profile.
@@ -65,6 +66,7 @@ Examples:
 - "What is the Roth IRA income limit?" -> [tax]
 - "Will putting more into an IRA help me retire by 60?" -> [tax, goals]
 - "Is a promise of guaranteed 30% returns a scam?" -> [qa]
+- (after the user listed their holdings) "Is it too risky?" -> [portfolio]
 - "How is TSLA doing today and what's the latest news?" -> [market, news]
 Also rewrite the latest message as a standalone question, resolving pronouns from the history."""
 
@@ -121,6 +123,32 @@ def apply_tax_guard(intents: list[Intent], *texts: str) -> tuple[list[Intent], b
     return list(dict.fromkeys(fixed)), True
 
 
+_PORTFOLIO_REF = re.compile(r"\b(it|its|it's|my|mine|them|these)\b", re.I)
+_PORTFOLIO_TOPIC = re.compile(
+    r"\b(diversif\w*|concentrat\w*|risky|risk|beta|sharpe|volatil\w*|drawdown|"
+    r"rebalanc\w*|allocation|weights?|sectors?|holdings?|portfolio|performance|performing)\b",
+    re.I,
+)
+
+
+def apply_portfolio_guard(
+    intents: list[Intent], text: str, *, has_portfolio: bool
+) -> tuple[list[Intent], bool]:
+    """Route follow-ups about a remembered portfolio ("how diversified is it?") to Portfolio.
+
+    Requires remembered holdings plus BOTH a reference ("it", "my") and a portfolio topic, so a
+    general concept question ("what is beta?") still goes to Q&A.
+    """
+    if not has_portfolio or "portfolio" in intents:
+        return intents, False
+    if not (_PORTFOLIO_REF.search(text) and _PORTFOLIO_TOPIC.search(text)):
+        return intents, False
+    fixed: list[Intent] = ["portfolio" if i in ("qa", "out_of_scope") else i for i in intents]
+    if "portfolio" not in fixed:
+        fixed.append("portfolio")
+    return list(dict.fromkeys(fixed)), True
+
+
 def keyword_route(text: str) -> RouteDecision:
     """Deterministic fallback router: every matching rule, else ``qa``."""
     lowered = text.lower()
@@ -156,11 +184,15 @@ class Router:
             intents.remove("out_of_scope")  # a real question wins over "out of scope"
         question = decision.standalone_question or latest
         intents, overridden = apply_tax_guard(intents, latest, question)
+        intents, portfolio_guard = apply_portfolio_guard(
+            intents, latest, has_portfolio=bool(state.get("portfolio"))
+        )
         log.info(
             "router_decision",
             intents=intents,
             method=method,
             tax_guard=overridden,
+            portfolio_guard=portfolio_guard,
             latency_ms=round((time.perf_counter() - start) * 1000),
         )
         return {"intents": intents, "question": question}
