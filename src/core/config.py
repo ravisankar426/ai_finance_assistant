@@ -98,6 +98,19 @@ class WorkflowConfig(BaseModel):
     """LangGraph workflow settings."""
 
     history_messages: int = Field(default=6, ge=0)  # recent turns shown to router/agents
+    # Conversation memory (REQ-WF-07): beyond this many messages, older ones are summarized.
+    summarize_after_messages: int = Field(default=16, ge=4)
+    keep_recent_messages: int = Field(default=6, ge=2)
+    # Checkpointer (ADR-11): in-process memory, or SQLite so conversations survive restarts.
+    checkpointer: Literal["memory", "sqlite"] = "memory"
+    sqlite_path: Path = Path("data/checkpoints.sqlite")
+    combined_overview: bool = True  # 1-2 sentence overview when several agents answer
+
+    @model_validator(mode="after")
+    def _resolve_sqlite_path(self) -> WorkflowConfig:
+        if not self.sqlite_path.is_absolute():
+            self.sqlite_path = PROJECT_ROOT / self.sqlite_path
+        return self
 
 
 class RAGConfig(BaseModel):

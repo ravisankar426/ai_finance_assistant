@@ -11,6 +11,11 @@ app:
 
 workflow:
   history_messages: 6      # recent messages the router/agents see (follow-up questions)
+  summarize_after_messages: 16   # older messages get summarized beyond this (REQ-WF-07)
+  keep_recent_messages: 6
+  checkpointer: memory     # memory | sqlite (conversations survive restarts)
+  sqlite_path: data/checkpoints.sqlite
+  combined_overview: true  # short overview when several agents answer
 
 rag:
   knowledge_base_dir: src/data/knowledge_base

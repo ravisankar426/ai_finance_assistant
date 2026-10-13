@@ -16,6 +16,7 @@ make models                   # live: list models your keys can use + smoke-test
 make check                    # lint + types + tests (coverage gate 80%) + traceability
 make ui                       # Streamlit app at http://localhost:8501
 make chat                     # chat in the terminal (live models)
+make api                      # REST API at http://localhost:8000/docs (SSE chat + tools)
 ```
 
 **Offline demo (no market APIs needed):** `MARKET__PROVIDERS='["fixture"]' make ui` serves recorded

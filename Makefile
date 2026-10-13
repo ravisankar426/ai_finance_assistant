@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check trace models requirements ui chat index eval live
+.PHONY: install lint format typecheck test check trace models requirements ui chat index eval live api
 
 install:        ## install deps + git hooks
 	uv sync
@@ -43,3 +43,6 @@ eval:           ## live: retrieval recall@5 / MRR for hybrid vs vector vs BM25
 
 live:           ## live: tests that call real APIs (router accuracy, retrieval recall)
 	uv run pytest -m live -q
+
+api:            ## run the REST API (docs at http://localhost:8000/docs)
+	uv run uvicorn src.web_app.api.app:app --reload --port 8000

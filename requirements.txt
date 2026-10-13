@@ -1,5 +1,9 @@
+aiosqlite==0.22.1
+    # via langgraph-checkpoint-sqlite
 altair==6.3.0
     # via streamlit
+annotated-doc==0.0.5
+    # via fastapi
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -43,6 +47,8 @@ distro==1.9.0
     #   google-genai
     #   langsmith
 faiss-cpu==1.15.1
+    # via ai-finance-assistant
+fastapi==0.143.0
     # via ai-finance-assistant
 filetype==1.2.0
     # via langchain-google-genai
@@ -118,10 +124,13 @@ langgraph==1.2.13
     # via
     #   ai-finance-assistant
     #   langchain
-langgraph-checkpoint==4.2.0
+langgraph-checkpoint==4.3.0
     # via
     #   langgraph
+    #   langgraph-checkpoint-sqlite
     #   langgraph-prebuilt
+langgraph-checkpoint-sqlite==3.1.2
+    # via ai-finance-assistant
 langgraph-prebuilt==1.1.0
     # via langgraph
 langgraph-sdk==0.4.5
@@ -147,6 +156,8 @@ numpy==2.5.3
     #   yfinance
 openai==3.24.0
     # via langchain-openai
+opentelemetry-api==1.45.1
+    # via fastapi
 orjson==3.12.0
     # via
     #   langgraph-sdk
@@ -185,6 +196,7 @@ pycparser==3.0 ; implementation_name != 'PyPy'
 pydantic==2.13.5
     # via
     #   ai-finance-assistant
+    #   fastapi
     #   google-genai
     #   langchain
     #   langchain-core
@@ -243,8 +255,12 @@ sniffio==1.3.1
     #   openai
 soupsieve==2.10
     # via beautifulsoup4
+sqlite-vec==0.1.9
+    # via langgraph-checkpoint-sqlite
 starlette==1.7.0
-    # via streamlit
+    # via
+    #   fastapi
+    #   streamlit
 streamlit==1.65.0
     # via ai-finance-assistant
 structlog==26.1.0
@@ -266,12 +282,14 @@ typing-extensions==4.16.0
     #   altair
     #   anyio
     #   beautifulsoup4
+    #   fastapi
     #   google-genai
     #   httpx2
     #   langchain-core
     #   langchain-protocol
     #   langsmith
     #   openai
+    #   opentelemetry-api
     #   pydantic
     #   pydantic-core
     #   referencing
@@ -280,6 +298,7 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.4
     # via
+    #   fastapi
     #   pydantic
     #   pydantic-settings
 tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
@@ -291,7 +310,9 @@ uuid-utils==0.17.1
     #   langchain-core
     #   langsmith
 uvicorn==0.54.0
-    # via streamlit
+    # via
+    #   ai-finance-assistant
+    #   streamlit
 watchdog==6.0.0 ; sys_platform != 'darwin'
     # via streamlit
 websockets==16.1.1

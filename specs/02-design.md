@@ -106,9 +106,10 @@ same key raise an error.
 ## 6. Graph
 
 ```
-START → input_guard ─(blocked)→ refuse → END
-             └→ router ─(Send per intent)→ {qa|portfolio|market|goals|news|tax}_agent
-                                                     └→ synthesizer → output_guard → END
+START → input_guard ─(blocked)→ guard_refusal ──────────────┐
+             └→ router ─(Send per intent)→ agent_{qa|portfolio|market|goals|news|tax}
+                                                     └→ synthesizer → output_guard ─┤
+                                         (history long) → compact_history → END ◄──┘
 ```
 - The router node writes `intents` and a **standalone question** (follow-ups like "what about its
   fees?" rewritten as self-contained questions, so retrieval works across turns). A conditional edge
@@ -119,12 +120,28 @@ START → input_guard ─(blocked)→ refuse → END
 - `input_guard` redacts PII **in place** (same message id → `add_messages` replaces it), so neither the
   LLMs nor the checkpoint store ever hold the raw value (REQ-GR-05). It also clears last turn's
   `agent_results` (custom `add_or_reset` reducer: `None` = reset).
-- The synthesizer is deterministic today (one result → as is; several → one headed section per agent,
-  plus failure notices). The LLM merge comes on Day 7.
-- `output_guard`: (Day 7) directive detector → rewrite (REQ-GR-04); adds the disclaimer except to
-  pure out-of-scope refusals (REQ-GR-03). History stores the answer *without* the disclaimer.
-- Checkpointer: `InMemorySaver` with a serializer that allowlists our Pydantic types; LangGraph refuses
-  to deserialize unregistered classes from saved state.
+- `input_guard` also removes prompt-injection sentences ("ignore previous instructions", "reveal
+  your system prompt", "you are now DAN") with a regex, *before* any LLM sees them (REQ-GR-02). If
+  nothing legitimate is left, `blocked=True` routes to `guard_refusal` and no model is called;
+  otherwise the cleaned question continues ("Ignore… What is an ETF?" → only the ETF part).
+- Synthesizer: one result → as is; several → one headed section per agent in a fixed order, plus
+  failure notices (REQ-WF-05). With `workflow.combined_overview`, an LLM writes a 2–3 sentence
+  "**In short:**" overview on top. It is **rejected if it contains a number the agents didn't
+  produce** (cheap groundedness check), so the overview can only connect, never invent.
+- `output_guard` (REQ-GR-03/04/07): `compliance_issues()` flags directives ("you should buy",
+  "strong buy", "I recommend selling") and guarantees ("guaranteed returns", "risk-free way";
+  "risk-free rate" and negations are exempt). `ComplianceRewriter` asks the guard model to rephrase
+  as education, **re-checks** the rewrite, and strips any sentence still flagged; with no model or
+  an outage it strips directly. The guarantee therefore never depends on the LLM. Disclaimer is
+  added except for out-of-scope and guard refusals.
+- Memory (`workflow/memory.py`, REQ-WF-04/07/08): profile and portfolio live in graph state, so the
+  checkpointer remembers them per thread; agents write them back via `AgentResult.state_updates`
+  (allowlisted keys only). When history exceeds `summarize_after_messages`, `compact_history`
+  replaces it with `[RemoveMessage(REMOVE_ALL_MESSAGES), SystemMessage(summary), *last N]`.
+  Rebuilding (not appending) keeps the summary first, which is where models weigh it.
+- Checkpointer: `InMemorySaver` (default) or `SqliteSaver` (`workflow.checkpointer: sqlite`, survives
+  restarts), both with a serializer that allowlists our Pydantic types; LangGraph refuses to
+  deserialize unregistered classes from saved state.
 - Day 2 retrieval: `KeywordRetriever` (IDF-weighted term coverage, title bonus for ranking) behind
   the `Retriever` protocol; Day 3 replaces it with FAISS + BM25 without changing any agent.
 
@@ -314,6 +331,27 @@ stops vendor imports from appearing outside `core/llm.py`.
   Hybrid wins on paraphrases; BM25 alone is a fallback, not a design. Known miss: the metaphor "how
   bumpy is the ride?" doesn't reach the volatility article (articles were not tuned to the eval set).
 
+## 9a. Service layer and REST API (`core/services.py`, `web_app/api/app.py`)
+
+`AssistantService` is the single facade (chat, portfolio, quote, trend, overview, goal plan,
+questionnaire, articles) used by the API, the Streamlit tabs and the MCP server, so business
+logic exists once. `build_service()` shares one market cache and one index between the graph
+and the endpoints.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /chat` | SSE: `token` events while agent nodes write, then `final` (full `ChatResponse`) |
+| `POST /chat/sync` | Same turn, plain JSON |
+| `POST /portfolio/analyze` · `GET /market/quote/{t}` · `/market/trend/{t}` · `/market/overview` | Deterministic tools |
+| `POST /goals/plan` · `GET /goals/questionnaire` · `POST /goals/risk-profile` · `GET /learn/articles` | Planning and learning |
+| `GET /health` | Liveness plus providers and article count |
+
+Error contract (REQ-API-03): validation → 422 with `field: message` details; `AppError` → its
+status (invalid ticker 404, unavailable data/LLM/KB 503) with the user-safe message; LangChain
+`ModelError` → 503; anything else → 500 `"Internal error."` with no internals. Once an SSE stream
+has started the status is already sent, so failures arrive in-band as an `error` event. Every
+response carries `X-Request-ID` (generated or propagated), bound into the logs.
+
 ## 10. Configuration
 
 `config.yaml` holds non-secret settings (LLM roles, TTLs, thresholds, limits). `.env` holds
@@ -327,7 +365,7 @@ stops vendor imports from appearing outside `core/llm.py`.
 | Engines | Pure unit tests + `hypothesis` property tests (e.g. weights sum to 1) |
 | Data layer | Fake providers; `respx`/monkeypatch for HTTP; time frozen with `freezegun` |
 | Agents/graph | `GenericFakeChatModel` scripted responses; assert routing, fan-in, degradation |
-| API | `httpx.AsyncClient` against the FastAPI app with services faked |
+| API | FastAPI `TestClient` against a real `AssistantService` built on scripted models, recorded market data and the offline index |
 | LLM gateway | Role → model resolution from config; fallback fires when the primary fake raises; cost callback math; no vendor imports outside `core/llm.py` |
 | Evals (opt-in, `-m live`) | Real models: router accuracy, retrieval recall, disclaimer presence, structured-output contract on OpenAI and Gemini |
 | LLM-as-judge (opt-in, `-m judge`) | Gemini scores ~30 golden Q&As from 1 to 5 on groundedness (claims supported by the cited chunks), citation faithfulness, compliance (no directives, disclaimer present), and clarity for the profile's level. Scores go to `docs/benchmarks.md` |

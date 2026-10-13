@@ -41,6 +41,7 @@ class GraphState(TypedDict, total=False):
     agent_results: Annotated[list[AgentResult], add_or_reset]
     final_answer: str
     citations: list[Citation]
+    blocked: bool  # input guard removed everything (prompt injection only)
 
 
 class AgentInput(TypedDict):

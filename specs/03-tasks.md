@@ -60,10 +60,10 @@ and you can answer that day's checkpoint questions.
 **Learn (finance primer II):** diversification, beta, Sharpe, drawdown, time value of money, risk tolerance.
 
 ## Day 7 — Tue Oct 13 · Full orchestration + guardrails + API
-| T7.1 | Multi-intent fan-out with `Send`, synthesizer, partial-failure notices | WF-02, WF-05 |
-| T7.2 | User profile memory, history summarization, SqliteSaver option | WF-04, WF-07, WF-08 |
-| T7.3 | Guards: scope, injection, directive rewrite, disclaimer, knowledge-level adaptation, conservative framing | GR-01..07 |
-| T7.4 | Service layer + FastAPI (SSE chat, endpoints, error handling, OpenAPI) | API-01..03, WF-06 |
+| T7.1 | ✅ Multi-intent fan-out with `Send`, synthesizer, partial-failure notices | WF-02, WF-05 |
+| T7.2 | ✅ User profile memory, history summarization, SqliteSaver option | WF-04, WF-07, WF-08 |
+| T7.3 | ✅ Guards: scope, injection, directive rewrite, disclaimer, knowledge-level adaptation, conservative framing | GR-01..07 |
+| T7.4 | ✅ Service layer + FastAPI (SSE chat, endpoints, error handling, OpenAPI) | API-01..03, WF-06 |
 **Learn:** the advice-vs-education line (SEC/FINRA), prompt injection, SSE streaming, FastAPI dependency injection.
 
 ## Day 8 — Wed Oct 14 · Streamlit UI
