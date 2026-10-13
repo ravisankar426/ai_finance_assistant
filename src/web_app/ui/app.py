@@ -49,8 +49,12 @@ def render_turn(turn: dict[str, Any]) -> None:
             st.caption("Answered by: " + " · ".join(turn["agents"]))
         if turn.get("citations"):
             with st.expander(f"Sources ({len(turn['citations'])})"):
-                for c in turn["citations"]:
-                    st.markdown(f"- [{c['title']}]({c['url']}) · _{c['category']}_")
+                st.markdown(  # numbered to match the [n] markers in the answer
+                    "\n".join(
+                        f"{i}. [{c['title']}]({c['url']}) · _{c['category']}_"
+                        for i, c in enumerate(turn["citations"], start=1)
+                    )
+                )
         if turn.get("learn_next"):
             links = " · ".join(f"[{a['title']}]({a['url']})" for a in turn["learn_next"])
             st.caption(f"📚 Learn next: {links}")

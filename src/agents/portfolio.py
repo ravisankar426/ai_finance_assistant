@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 
-from src.agents.grounded import LEVEL_STYLE, cited_chunks
+from src.agents.grounded import LEVEL_STYLE, renumber_citations
 from src.core.config import PortfolioConfig
 from src.core.llm import CONFIG_ERRORS
 from src.core.models import AgentResult, Holding
@@ -150,10 +150,11 @@ class PortfolioAgent:
             f"_Prices: {', '.join(analysis.sources)}. Metrics use past data and don't predict "
             "future results._"
         )
+        body, citations = renumber_citations(reply.text.strip(), [c.citation() for c in concepts])
         return AgentResult(
             agent=self.name,
-            answer=f"{reply.text.strip()}\n\n{footer}",
-            citations=cited_chunks(reply.text, concepts),
+            answer=f"{body}\n\n{footer}",
+            citations=citations,
             data=data,
             state_updates=updates,
         )

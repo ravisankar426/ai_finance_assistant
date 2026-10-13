@@ -62,6 +62,7 @@ def test_chat_turn_shows_answer_agent_and_sources(fake: None) -> None:
     assert QA_REPLY in text
     assert any("Answered by: Finance Q&A" in c.value for c in at.caption)
     assert any(e.label == "Sources (1)" for e in at.expander)
+    assert any(m.value.startswith("1. [") for m in at.markdown)  # numbered like the [n] markers
     assert len(at.session_state.history) == 2
 
 

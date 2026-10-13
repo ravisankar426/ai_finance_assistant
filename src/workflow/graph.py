@@ -32,6 +32,7 @@ from langgraph.types import Send
 from src.agents.base import Agent, run_safely
 from src.agents.entities import TickerExtractor, TickerRequest
 from src.agents.goals import GoalRequest, GoalsAgent
+from src.agents.grounded import remap_markers
 from src.agents.market import MarketAgent
 from src.agents.news import NewsAgent
 from src.agents.portfolio import HoldingsRequest, PortfolioAgent
@@ -186,25 +187,30 @@ def make_synthesizer(overview_model: Runnable[Any, Any] | None) -> StateNode:
         ok = [r for r in results if r.error is None and (r.answer or r.follow_up_question)]
         failed = [r for r in results if r.error is not None]
 
+        # One numbered source list for the whole reply: each agent's [n] -> global number.
+        citations: list[Citation] = []
+        position: dict[str, int] = {}
+        text: dict[int, str] = {}
+        for r in ok:
+            mapping = {}
+            for i, c in enumerate(r.citations, start=1):
+                if c.url not in position:
+                    position[c.url] = len(citations) + 1
+                    citations.append(c)
+                mapping[i] = position[c.url]
+            text[id(r)] = remap_markers(r.answer, mapping)
+
         answered = [r for r in ok if r.answer]
         if len(answered) == 1:
-            parts = [answered[0].answer]
+            parts = [text[id(answered[0])]]
         else:
-            parts = [f"**{AGENT_LABELS.get(r.agent, r.agent)}**\n\n{r.answer}" for r in answered]
+            parts = [f"**{AGENT_LABELS.get(r.agent, r.agent)}**\n\n{text[id(r)]}" for r in answered]
             overview = _overview(overview_model, state.get("question", ""), answered)
             if overview:
                 parts.insert(0, f"**In short:** {overview}")
         parts += [f"> ⚠️ {r.error}" for r in failed]  # partial answer + notice (REQ-WF-05)
         parts += [f"**Quick question:** {r.follow_up_question}" for r in ok if r.follow_up_question]
         answer = "\n\n".join(parts) or "Sorry, I couldn't produce an answer. Please try again."
-
-        citations: list[Citation] = []
-        seen: set[tuple[str, str]] = set()
-        for r in ok:
-            for c in r.citations:
-                if (c.title, c.url) not in seen:
-                    seen.add((c.title, c.url))
-                    citations.append(c)
         return {"final_answer": answer, "citations": citations}
 
     return synthesizer

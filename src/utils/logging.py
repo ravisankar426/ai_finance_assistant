@@ -18,7 +18,7 @@ import sys
 import uuid
 from collections.abc import Iterator, MutableMapping
 from contextlib import contextmanager
-from typing import Any, Literal
+from typing import Any, Literal, TextIO
 
 import structlog
 
@@ -35,12 +35,19 @@ def _redact_processor(
     return event_dict
 
 
-def configure_logging(level: str = "INFO", fmt: Literal["console", "json"] = "console") -> None:
-    """Configure structlog for the whole process. Safe to call more than once."""
+def configure_logging(
+    level: str = "INFO", fmt: Literal["console", "json"] = "console", stream: TextIO | None = None
+) -> None:
+    """Configure structlog for the whole process. Safe to call more than once.
+
+    ``stream`` defaults to stdout; the MCP stdio server passes stderr because stdout carries
+    the protocol.
+    """
+    out = stream or sys.stdout
     renderer: Any = (
         structlog.processors.JSONRenderer()
         if fmt == "json"
-        else structlog.dev.ConsoleRenderer(colors=sys.stdout.isatty())
+        else structlog.dev.ConsoleRenderer(colors=out.isatty())
     )
     structlog.configure(
         processors=[
@@ -53,7 +60,7 @@ def configure_logging(level: str = "INFO", fmt: Literal["console", "json"] = "co
             renderer,
         ],
         wrapper_class=structlog.make_filtering_bound_logger(logging.getLevelName(level)),
-        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+        logger_factory=structlog.PrintLoggerFactory(file=out),
         cache_logger_on_first_use=False,
     )
 

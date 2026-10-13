@@ -4,7 +4,6 @@
 - {text: "How does compound interest work?", expected: [qa]}
 - {text: "Explain the difference between stocks and bonds", expected: [qa]}
 - {text: "What is diversification and why does it matter?", expected: [qa]}
-- {text: "How big should an emergency fund be?", expected: [qa]}
 - {text: "What does an expense ratio mean?", expected: [qa]}
 - {text: "Is dollar-cost averaging a good idea for beginners?", expected: [qa]}
 - {text: "Analyze my portfolio: 10 AAPL, 5 MSFT and 20 VTI", expected: [portfolio]}
@@ -37,3 +36,7 @@
 - {text: "Give me a lasagna recipe", expected: [out_of_scope]}
 - {text: "Write a Python function to sort a list", expected: [out_of_scope]}
 - {text: "Who won the football game last night?", expected: [out_of_scope]}
+# General rules of thumb are concepts (qa); a personal target or time frame is goals.
+- {text: "How big should an emergency fund be?", expected: [qa], forbidden: [goals]}
+- {text: "What percentage of income should I save?", expected: [qa], forbidden: [goals]}
+- {text: "Help me build a 6-month emergency fund by next year", expected: [goals]}

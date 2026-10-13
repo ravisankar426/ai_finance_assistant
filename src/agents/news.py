@@ -6,7 +6,6 @@ has headlines and must not invent details. Every headline it mentions is linked 
 
 from __future__ import annotations
 
-import re
 from datetime import UTC, datetime
 from hashlib import sha1
 from typing import Any
@@ -15,7 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 
 from src.agents.entities import TickerExtractor
-from src.agents.grounded import LEVEL_STYLE, cited_chunks
+from src.agents.grounded import LEVEL_STYLE, renumber_citations
 from src.core.errors import AppError
 from src.core.models import AgentResult, Citation
 from src.core.news import select_headlines
@@ -115,14 +114,19 @@ class NewsAgent:
             sources=concept_text or "(none)",
         )
         reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
-        text = reply.text.strip()
+        headline_sources = [self._headline_citation(n) for n in selected]
+        text, citations = renumber_citations(
+            reply.text.strip(),
+            headline_sources + [c.citation() for c in concepts],  # numbered as in the prompt
+            fallback=headline_sources,
+        )
         footer = (
             f"_Headlines via {', '.join(sorted(sources))}; summaries are based on headlines only._"
         )
         return AgentResult(
             agent=self.name,
             answer=f"{text}\n\n{footer}",
-            citations=self._citations(text, selected) + cited_chunks(text, concepts, offset=offset),
+            citations=citations,
             data={"headlines": [n.model_dump(mode="json") for n in selected], "subjects": subjects},
         )
 
@@ -134,16 +138,11 @@ class NewsAgent:
         return datetime.now(UTC)
 
     @staticmethod
-    def _citations(text: str, items: list[NewsItem]) -> list[Citation]:
-        """One citation per headline the summary references (all, if it referenced none)."""
-        numbers = {int(n) for n in re.findall(r"\[(\d+)\]", text) if 1 <= int(n) <= len(items)}
-        used = [items[n - 1] for n in sorted(numbers)] or items
-        return [
-            Citation(
-                title=f"{n.title} ({n.publisher})",
-                url=n.url,
-                category="news",
-                chunk_id="news:" + sha1(n.url.encode(), usedforsecurity=False).hexdigest()[:12],
-            )
-            for n in used
-        ]
+    def _headline_citation(n: NewsItem) -> Citation:
+        """Source entry for one headline."""
+        return Citation(
+            title=f"{n.title} ({n.publisher})",
+            url=n.url,
+            category="news",
+            chunk_id="news:" + sha1(n.url.encode(), usedforsecurity=False).hexdigest()[:12],
+        )

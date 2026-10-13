@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 
-from src.agents.grounded import LEVEL_STYLE, cited_chunks
+from src.agents.grounded import LEVEL_STYLE, renumber_citations
 from src.core.config import PlanningConfig
 from src.core.goal_engine import describe_plan, plan_goal
 from src.core.llm import CONFIG_ERRORS
@@ -163,14 +163,15 @@ class GoalsAgent:
             sources=sources or "(none)",
         )
         reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
+        body, citations = renumber_citations(reply.text.strip(), [c.citation() for c in concepts])
         footer = (
             "_Returns and inflation are illustrative assumptions (see config), not forecasts; "
             "actual results will differ._"
         )
         return AgentResult(
             agent=self.name,
-            answer=f"{reply.text.strip()}\n\n{footer}",
-            citations=cited_chunks(reply.text, concepts),
+            answer=f"{body}\n\n{footer}",
+            citations=citations,
             data={"plan": plan.model_dump(mode="json")},
             state_updates=updates,
         )

@@ -50,7 +50,10 @@ Choose every intent that applies to the user's latest message:
   including follow-ups about a portfolio shared earlier ("is it diversified?", "its beta?").
 - market: CURRENT data — today's prices, quotes, how a specific ticker, index, or sector is
   performing or trending right now.
-- goals: planning a goal — retirement, house, college, how much to save, risk profile.
+- goals: planning the user's OWN goal — they describe a target, amount, or time frame
+  ("$50k for a house in 5 years", "can I retire at 60?") or ask about their risk profile.
+  General rules of thumb with no personal goal ("how much do experts suggest saving?",
+  "how large is a typical emergency fund?") are "qa".
 - news: recent financial news or headlines about a company or the market.
 - tax: US taxes and tax-advantaged accounts (401(k), IRA, Roth, HSA, 529, RMDs, capital gains,
   dividends taxation, wash sale, tax brackets).
@@ -66,6 +69,8 @@ Examples:
 - "What is the Roth IRA income limit?" -> [tax]
 - "Will putting more into an IRA help me retire by 60?" -> [tax, goals]
 - "Is a promise of guaranteed 30% returns a scam?" -> [qa]
+- "What share of my paycheck do people usually set aside?" -> [qa]
+- "I want a 6-month cushion saved by next summer, how much per month?" -> [goals]
 - (after the user listed their holdings) "Is it too risky?" -> [portfolio]
 - "How is TSLA doing today and what's the latest news?" -> [market, news]
 Also rewrite the latest message as a standalone question, resolving pronouns from the history."""
@@ -149,6 +154,27 @@ def apply_portfolio_guard(
     return list(dict.fromkeys(fixed)), True
 
 
+# A personal goal mentions an amount, a time frame, or the user's own plan.
+_GOAL_SIGNAL = re.compile(
+    r"\$\s?\d|\b\d[\d,.]*\s*(k|thousand|million|%)\b|\b\d+\s*(years?|months?|yrs?)\b|"
+    r"\bby (next|the end|20\d\d|age)\b|\bretire (at|by|in|early)\b|\bmy (goal|risk|plan)\b|"
+    r"\bi (want|need|plan|hope)\b|\bi'?m saving\b|\bi am saving\b|\bcan i\b|\bwe (want|need)\b",
+    re.IGNORECASE,
+)
+
+
+def apply_goals_guard(intents: list[Intent], text: str) -> tuple[list[Intent], bool]:
+    """Drop "goals" from [qa, goals] when the message states no personal goal.
+
+    "How big should an emergency fund be?" is a rule-of-thumb concept question: the Goals agent
+    would only ask for an amount and a horizon. A goals-only decision is kept (the agent's
+    follow-up question is the right response to "how much should I save for retirement?").
+    """
+    if "goals" in intents and "qa" in intents and not _GOAL_SIGNAL.search(text):
+        return [i for i in intents if i != "goals"], True
+    return intents, False
+
+
 def keyword_route(text: str) -> RouteDecision:
     """Deterministic fallback router: every matching rule, else ``qa``."""
     lowered = text.lower()
@@ -187,12 +213,14 @@ class Router:
         intents, portfolio_guard = apply_portfolio_guard(
             intents, latest, has_portfolio=bool(state.get("portfolio"))
         )
+        intents, goals_guard = apply_goals_guard(intents, latest)
         log.info(
             "router_decision",
             intents=intents,
             method=method,
             tax_guard=overridden,
             portfolio_guard=portfolio_guard,
+            goals_guard=goals_guard,
             latency_ms=round((time.perf_counter() - start) * 1000),
         )
         return {"intents": intents, "question": question}

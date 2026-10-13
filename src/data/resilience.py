@@ -40,6 +40,8 @@ class TTLCache:
         self.maxsize = maxsize
         self.clock = clock
         self._data: OrderedDict[Any, CacheEntry[Any]] = OrderedDict()
+        self.hits = 0
+        self.misses = 0
 
     def set(self, key: Any, value: Any) -> None:
         """Store ``value`` now, evicting the least recently used entry if full."""
@@ -52,9 +54,17 @@ class TTLCache:
         """Return the value if younger than ``ttl_s``, else None."""
         entry = self._data.get(key)
         if entry is None or self.clock() - entry.stored_at > ttl_s:
+            self.misses += 1
             return None
+        self.hits += 1
         self._data.move_to_end(key)
         return entry.value
+
+    @property
+    def hit_rate(self) -> float | None:
+        """Share of fresh reads served from cache (REQ-NFR-08); None before any read."""
+        total = self.hits + self.misses
+        return self.hits / total if total else None
 
     def get_any(self, key: Any) -> tuple[Any, float] | None:
         """Return (value, age in seconds) regardless of freshness, or None."""

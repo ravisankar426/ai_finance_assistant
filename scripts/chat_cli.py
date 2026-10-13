@@ -37,8 +37,8 @@ def main() -> None:
         with request_context(), track_usage() as usage:
             out = graph.invoke({"messages": [HumanMessage(question)]}, config)
         print(f"\nassistant> {out['final_answer']}")
-        for c in out.get("citations", []):
-            print(f"   source: {c.title} — {c.url}")
+        for i, c in enumerate(out.get("citations", []), start=1):
+            print(f"   [{i}] {c.title} — {c.url}")
         for r in out.get("agent_results", []):
             for a in r.data.get("learn_next", []):
                 print(f"   learn next: {a['title']}")

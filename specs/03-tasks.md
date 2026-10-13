@@ -73,11 +73,11 @@ and you can answer that day's checkpoint questions.
 | T8.4 | ✅ Learn tab | UI-06 |
 
 ## Day 9 — Thu Oct 15 · Quality + bonus
-| T9.1 | Fill coverage gaps to ≥ 80%, edge cases, traceability check | NFR-01 |
-| T9.2a | Benchmark script (latency, cost, cache hit, router accuracy, 20 concurrent sessions) + structured-output contract tests on OpenAI and Gemini → `docs/benchmarks.md` | NFR-02, NFR-03, NFR-08, NFR-09 |
-| T9.2b | LLM-as-judge on Gemini: golden set of ~30 Q&As, rubric scoring, averages in `docs/benchmarks.md` | NFR-11, LLM-06 |
-| T9.3 | MCP server (FastMCP) + Claude Desktop config | MCP-01, MCP-02 |
-| T9.4 | Dockerfile + docker-compose | NFR-06 |
+| T9.1 | ✅ Fill coverage gaps to ≥ 80%, edge cases, traceability check | NFR-01 |
+| T9.2a | ✅ Benchmark script (latency, cost, cache hit, router accuracy, 20 concurrent sessions) + structured-output contract tests on OpenAI and Gemini → `docs/benchmarks.md` | NFR-02, NFR-03, NFR-08, NFR-09 |
+| T9.2b | ✅ LLM-as-judge on Gemini: golden set of ~30 Q&As, rubric scoring, averages in `docs/benchmarks.md` | NFR-11, LLM-06 |
+| T9.3 | ✅ MCP server (FastMCP) + Claude Desktop config | MCP-01, MCP-02 |
+| T9.4 | ✅ Dockerfile + docker-compose | NFR-06 |
 
 ## Day 10 — Fri Oct 16 · Ship
 | T10.1 | README (architecture, setup, API, usage, troubleshooting) | NFR-07 |

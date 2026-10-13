@@ -136,3 +136,22 @@ def test_router_applies_tax_guard_to_llm_decision() -> None:
         out = router(_state("How does the wash sale rule work?"))
     assert out["intents"] == ["tax"]
     assert next(e for e in logs if e["event"] == "router_decision")["tax_guard"] is True
+
+
+@pytest.mark.parametrize(
+    ("intents", "text", "expected"),
+    [
+        (["qa", "goals"], "How big should an emergency fund be?", ["qa"]),
+        (["goals", "qa"], "What percentage of income should I save?", ["qa"]),
+        (["qa", "goals"], "What is compound interest and can I retire at 55?", ["qa", "goals"]),
+        (["qa", "goals"], "Explain index funds; I want $50k in 5 years", ["qa", "goals"]),
+        (["goals"], "How much should I save for retirement?", ["goals"]),  # goals-only kept
+        (["qa"], "What is an emergency fund?", ["qa"]),
+    ],
+)
+def test_goals_guard(intents: list[str], text: str, expected: list[str]) -> None:
+    """REQ-WF-01: rules of thumb go to Q&A; a stated personal goal keeps Goal Planning."""
+    from src.workflow.router import apply_goals_guard
+
+    fixed, changed = apply_goals_guard(intents, text)  # type: ignore[arg-type]
+    assert fixed == expected and changed == (fixed != intents)

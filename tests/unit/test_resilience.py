@@ -182,3 +182,16 @@ def test_rate_limiter_reports_wait_time() -> None:
     clock.advance(1.2)
     assert limiter.try_acquire()
     assert limiter.wait_time() == pytest.approx(100 - 1.2)  # daily-style window dominates
+
+
+def test_cache_counts_hits_and_misses() -> None:
+    """REQ-NFR-08: the benchmark reports the market-data cache hit rate."""
+    now = [0.0]
+    cache = TTLCache(clock=lambda: now[0])
+    assert cache.hit_rate is None
+    assert cache.get_fresh("k", 10) is None  # miss: absent
+    cache.set("k", 1)
+    assert cache.get_fresh("k", 10) == 1  # hit
+    now[0] = 11
+    assert cache.get_fresh("k", 10) is None  # miss: expired
+    assert (cache.hits, cache.misses, cache.hit_rate) == (1, 2, 1 / 3)

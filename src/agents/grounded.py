@@ -84,8 +84,7 @@ class GroundedAgent:
         if not chunks:
             return AgentResult(agent=self.name, answer=self.not_covered)  # no LLM call
         reply = self.model.invoke(self._prompt(inp, chunks))
-        answer = self.postprocess(reply.text.strip())
-        citations = self._cited(answer, chunks)
+        answer, citations = self._cited(self.postprocess(reply.text.strip()), chunks)
         return AgentResult(
             agent=self.name,
             answer=answer,
@@ -121,9 +120,10 @@ class GroundedAgent:
         return [SystemMessage(system), *history, HumanMessage(inp["question"])]
 
     @staticmethod
-    def _cited(answer: str, chunks: Sequence[RetrievedChunk]) -> list[Citation]:
-        """Citations for the [n] markers (all sources if none), one per article."""
-        return cited_chunks(answer, chunks, fallback_all=True)
+    def _cited(answer: str, chunks: Sequence[RetrievedChunk]) -> tuple[str, list[Citation]]:
+        """Renumbered answer and its citations (all sources if it has no markers)."""
+        sources = [c.citation() for c in chunks]
+        return renumber_citations(answer, sources, fallback=sources)
 
     def _learn_next(
         self, ranked: Sequence[RetrievedChunk], cited_articles: set[str], inp: AgentInput
@@ -142,22 +142,37 @@ class GroundedAgent:
         return picks
 
 
-def cited_chunks(
-    answer: str, chunks: Sequence[RetrievedChunk], *, fallback_all: bool = False, offset: int = 0
-) -> list[Citation]:
-    """One citation per article whose marker ``[offset + n]`` appears in ``answer``.
+def renumber_citations(
+    answer: str, sources: Sequence[Citation], *, fallback: Sequence[Citation] = ()
+) -> tuple[str, list[Citation]]:
+    """Make ``[n]`` markers match the source list the user sees (REQ-RAG-05).
 
-    ``fallback_all``: cite every chunk when the answer has no markers (the answer is built
-    *only* from these sources, e.g. Q&A). Agents mixing data and concepts use False.
+    ``sources`` is the list the prompt numbered: marker ``[n]`` refers to ``sources[n-1]``.
+    The user sees one entry per URL (several chunks of one article -> one source), numbered in
+    reading order, so markers are rewritten to those numbers. Markers pointing at nothing are
+    dropped. With no valid markers, ``fallback`` is cited and the text is unchanged.
     """
-    numbers = {int(n) - offset for n in _CITE.findall(answer)}
-    used = [chunks[n - 1] for n in sorted(numbers) if 1 <= n <= len(chunks)]
-    if not used and fallback_all:
-        used = list(chunks)
-    seen: set[str] = set()
-    citations = []
-    for c in used:
-        if c.article_id not in seen:  # several chunks of one article -> one citation
-            seen.add(c.article_id)
-            citations.append(c.citation())
-    return citations
+    cited: list[Citation] = []
+    position: dict[str, int] = {}
+    mapping: dict[int, int] = {}
+    for match in _CITE.finditer(answer):
+        n = int(match.group(1))
+        if 1 <= n <= len(sources) and n not in mapping:
+            url = sources[n - 1].url
+            if url not in position:
+                position[url] = len(cited) + 1
+                cited.append(sources[n - 1])
+            mapping[n] = position[url]
+    if not cited:
+        unique = list({c.url: c for c in reversed(fallback)}.values())[::-1]
+        return answer, unique
+    return remap_markers(answer, mapping), cited
+
+
+def remap_markers(answer: str, mapping: dict[int, int]) -> str:
+    """Rewrite ``[n]`` to ``[mapping[n]]``; drop unmapped markers and collapse repeats."""
+    text = _CITE.sub(
+        lambda m: f"[{mapping[int(m.group(1))]}]" if int(m.group(1)) in mapping else "", answer
+    )
+    text = re.sub(r"(\[\d+\])(?:\s*\1)+", r"\1", text)  # "[1] [1]" -> "[1]"
+    return re.sub(r"[ \t]+([.,;:!?])", r"\1", text)  # space left before punctuation

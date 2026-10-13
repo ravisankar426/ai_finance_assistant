@@ -6,6 +6,7 @@ Colors come from Plotly's defaults plus a diverging red/green scale for daily mo
 
 from __future__ import annotations
 
+import math
 from collections.abc import Sequence
 
 import plotly.graph_objects as go
@@ -97,15 +98,15 @@ def sector_heatmap(rows: Sequence[OverviewRow], title: str = "Sectors today") ->
 
 
 def rolling_mean(values: Sequence[float], window: int) -> list[float | None]:
-    """Trailing simple moving average; None until a full window is available."""
-    out: list[float | None] = []
-    total = 0.0
-    for i, v in enumerate(values):
-        total += v
-        if i >= window:
-            total -= values[i - window]
-        out.append(total / window if i >= window - 1 else None)
-    return out
+    """Trailing simple moving average; None until a full window is available.
+
+    Each window is summed exactly (``math.fsum``) rather than with a running total, which
+    accumulates rounding error after large values leave the window.
+    """
+    return [
+        math.fsum(values[i - window + 1 : i + 1]) / window if i >= window - 1 else None
+        for i in range(len(values))
+    ]
 
 
 def price_chart(history: PriceHistory, windows: Sequence[int] = (50, 200)) -> go.Figure:

@@ -1,0 +1,51 @@
+# `docker compose up --build` -> API on :8000 (docs at /docs), UI on :8501 (REQ-NFR-06).
+# Needs a .env next to this file (copy .env.example). The index is built once into a volume.
+# Host ports are overridable: API_PORT=8080 UI_PORT=8502 docker compose up
+x-app: &app
+  build: .
+  image: ai-finance-assistant:latest
+  env_file: .env
+  volumes:
+    - index:/app/src/data/index
+    - embeddings:/app/src/data/embedding_cache
+    - state:/app/data
+
+services:
+  index:
+    <<: *app
+    command: ["python", "scripts/build_index.py", "--if-needed"]
+    restart: "no"
+
+  api:
+    <<: *app
+    command: ["uvicorn", "src.web_app.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports: ["${API_PORT:-8000}:8000"]
+    depends_on:
+      index: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  ui:
+    <<: *app
+    command: ["streamlit", "run", "src/web_app/ui/app.py", "--server.address=0.0.0.0",
+              "--server.port=8501", "--server.headless=true"]
+    ports: ["${UI_PORT:-8501}:8501"]
+    depends_on:
+      index: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  index:
+  embeddings:
+  state:

@@ -15,6 +15,7 @@ from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 
 from src.core.config import Settings, get_settings
+from src.core.errors import ConfigurationError
 from src.core.goal_engine import (
     QUESTIONNAIRE,
     GoalPlan,
@@ -30,6 +31,7 @@ from src.data.market_service import MarketDataService, build_market_service
 from src.data.models import PriceBar, PriceHistory, Quote
 from src.data.overview import MarketOverview, market_overview
 from src.rag.knowledge_base import Article, load_articles
+from src.rag.retriever import Retriever
 
 AGENT_NODE_PREFIX = "agent_"
 
@@ -89,20 +91,44 @@ class ArticleSummary(BaseModel):
     body: str
 
 
+class KnowledgeHit(BaseModel):
+    """One knowledge-base passage with its source (REQ-MCP-01, REQ-RAG-05)."""
+
+    title: str
+    category: str
+    url: str
+    section: str
+    text: str
+    score: float
+
+
 class AssistantService:
-    """Facade over the graph, market data, engines, and knowledge base."""
+    """Facade over the graph, market data, engines, and knowledge base.
+
+    ``graph`` is optional: the MCP server exposes tools only, so it skips building the chat
+    models. ``retriever`` is optional for interfaces that don't search the knowledge base.
+    """
 
     def __init__(
         self,
-        graph: CompiledStateGraph[Any, Any, Any, Any],
+        graph: CompiledStateGraph[Any, Any, Any, Any] | None,
         market: MarketDataService,
         settings: Settings,
         articles: list[Article],
+        retriever: Retriever | None = None,
     ) -> None:
-        self.graph = graph
+        self._graph = graph
         self.market = market
         self.settings = settings
         self.articles = articles
+        self.retriever = retriever
+
+    @property
+    def graph(self) -> CompiledStateGraph[Any, Any, Any, Any]:
+        """The chat workflow; fails loudly if this service was built without one."""
+        if self._graph is None:
+            raise ConfigurationError("This service was built without the chat workflow.")
+        return self._graph
 
     # -- chat ----------------------------------------------------------------------------------
 
@@ -248,6 +274,25 @@ class AssistantService:
         """Knowledge-base categories, sorted (REQ-UI-06)."""
         return sorted({a.category for a in self.articles})
 
+    def search_knowledge_base(
+        self, query: str, k: int = 4, category: str | None = None
+    ) -> list[KnowledgeHit]:
+        """Hybrid search over the knowledge base (REQ-MCP-01)."""
+        if self.retriever is None:
+            raise ConfigurationError("This service was built without a knowledge-base index.")
+        chunks = self.retriever.retrieve(query, k=k, categories=[category] if category else None)
+        return [
+            KnowledgeHit(
+                title=c.title,
+                category=c.category,
+                url=c.url,
+                section=c.section,
+                text=c.text,
+                score=round(c.score, 4),
+            )
+            for c in chunks
+        ]
+
     def list_articles(self, category: str | None = None) -> list[ArticleSummary]:
         """Knowledge-base articles, optionally by category (REQ-UI-06)."""
         return [
@@ -257,11 +302,16 @@ class AssistantService:
         ]
 
 
-def build_service(settings: Settings | None = None) -> AssistantService:
-    """Build everything once: one market cache and one index shared by agents and endpoints."""
+def build_service(settings: Settings | None = None, *, chat: bool = True) -> AssistantService:
+    """Build everything once: one market cache and one index shared by agents and endpoints.
+
+    ``chat=False`` skips the LLM workflow (MCP tools need only data, engines, and search).
+    """
     from src.workflow.graph import build_default_graph, build_retriever
 
     settings = settings or get_settings()
     market = build_market_service(settings)
-    graph = build_default_graph(settings, market=market, retriever=build_retriever(settings))
-    return AssistantService(graph, market, settings, load_articles(settings.rag.knowledge_base_dir))
+    retriever = build_retriever(settings)
+    graph = build_default_graph(settings, market=market, retriever=retriever) if chat else None
+    articles = load_articles(settings.rag.knowledge_base_dir)
+    return AssistantService(graph, market, settings, articles, retriever)

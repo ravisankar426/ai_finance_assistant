@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 
 from src.agents.entities import TickerExtractor
-from src.agents.grounded import LEVEL_STYLE, cited_chunks
+from src.agents.grounded import LEVEL_STYLE, renumber_citations
 from src.core.errors import AppError
 from src.core.market_analytics import describe_snapshot, trend_snapshot
 from src.core.models import AgentResult
@@ -124,11 +124,12 @@ class MarketAgent:
             sources=numbered or "(none)",
         )
         reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
-        answer = reply.text.strip() + "\n\n" + self._data_footer(sources, stale)
+        body, citations = renumber_citations(reply.text.strip(), [c.citation() for c in concepts])
+        answer = body + "\n\n" + self._data_footer(sources, stale)
         return AgentResult(
             agent=self.name,
             answer=answer,
-            citations=cited_chunks(reply.text, concepts),
+            citations=citations,
             data=data,
         )
 

@@ -1,4 +1,4 @@
-.PHONY: install lint format typecheck test check trace models requirements ui chat index eval live api
+.PHONY: install lint format typecheck test check trace models requirements ui chat index eval live api mcp bench judge docker
 
 install:        ## install deps + git hooks
 	uv sync
@@ -46,3 +46,15 @@ live:           ## live: tests that call real APIs (router accuracy, retrieval r
 
 api:            ## run the REST API (docs at http://localhost:8000/docs)
 	uv run uvicorn src.web_app.api.app:app --reload --port 8000
+
+mcp:            ## run the MCP server over stdio (for Claude Desktop / MCP clients)
+	uv run python -m src.web_app.mcp_server
+
+bench:          ## live: latency/cost/cache/router/retrieval/concurrency -> docs/benchmarks.md
+	uv run python -m scripts.benchmark
+
+judge:          ## live: LLM-as-judge on the golden set (Gemini) -> docs/benchmarks.md
+	uv run python -m scripts.judge_eval
+
+docker:         ## build and start API (:8000) + UI (:8501) in containers
+	docker compose up --build

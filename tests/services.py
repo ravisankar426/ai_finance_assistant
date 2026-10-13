@@ -34,4 +34,5 @@ def fake_service(settings: Settings, intents: list[str] | None = None) -> Assist
             "qa": QAAgent(ScriptedChatModel(reply=QA_REPLY), offline_retriever()),
         },
     )
-    return AssistantService(graph, market, settings, load_articles(settings.rag.knowledge_base_dir))
+    articles = load_articles(settings.rag.knowledge_base_dir)
+    return AssistantService(graph, market, settings, articles, offline_retriever())

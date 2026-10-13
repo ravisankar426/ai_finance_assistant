@@ -124,6 +124,14 @@ START → input_guard ─(blocked)→ guard_refusal ─────────�
   your system prompt", "you are now DAN") with a regex, *before* any LLM sees them (REQ-GR-02). If
   nothing legitimate is left, `blocked=True` routes to `guard_refusal` and no model is called;
   otherwise the cleaned question continues ("Ignore… What is an ETF?" → only the ETF part).
+- Citations (REQ-RAG-05): the user sees one numbered source per article/headline, in reading
+  order. `renumber_citations` rewrites each agent's `[n]` (which referred to the prompt's chunk
+  list) to that numbering and drops markers pointing at nothing; the synthesizer then maps every
+  agent's numbers onto one global list, so `[2]` always means the second entry under Sources.
+  Found by the LLM judge: answers citing chunks [1]-[4] of one article showed "Sources (1)".
+- Router guards (deterministic, after the LLM): tax terms → `tax`; follow-ups about remembered
+  holdings → `portfolio`; `[qa, goals]` with no personal goal signal (amount, time frame, "I want",
+  "can I", "retire at") → `qa` only, so rule-of-thumb questions aren't answered with a follow-up.
 - Synthesizer: one result → as is; several → one headed section per agent in a fixed order, plus
   failure notices (REQ-WF-05). With `workflow.combined_overview`, an LLM writes a 2–3 sentence
   "**In short:**" overview on top. It is **rejected if it contains a number the agents didn't
@@ -371,6 +379,42 @@ without retyping. The engine adds `performance` (growth of 100) to `PortfolioAna
 chart; the Portfolio agent excludes it from its checkpointed data. Refresh relies on the market
 cache: data is re-fetched only after its TTL expires (REQ-UI-04). Streamlit columns stack on
 narrow screens (REQ-UI-07). Tests drive the real page with `AppTest` and a fake service.
+
+## 9c. MCP server (`web_app/mcp_server/`)
+
+`MCPServer` (MCP Python SDK 2.x, formerly FastMCP) over stdio with five tools that wrap
+`AssistantService`: `get_quote`, `market_overview`, `analyze_portfolio`, `plan_goal`,
+`search_knowledge_base`. The service is built with `chat=False` (no LLM workflow: MCP clients
+bring their own model) on the first tool call, so the handshake is instant. Tools return
+Pydantic models → `structuredContent` plus an output schema. `AppError` → tool error with the
+user-safe message; anything else → "Internal error". Logs go to stderr because stdout is the
+JSON-RPC channel (`configure_logging(stream=sys.stderr)`). Tested end to end with the SDK's
+in-memory client; verified live over stdio.
+
+## 9d. Deployment (Docker)
+
+One image (python:3.12-slim + uv, `uv sync --frozen`, non-root `app` user) runs three compose
+services: `index` (one-shot `build_index.py --if-needed`; reuses a fingerprint-matching index)
+→ `api` and `ui` (`depends_on: service_completed_successfully`, so they never race to write
+the index). Named volumes hold the index, the embedding cache, and SQLite state. Keys come
+from `.env` at run time, never from the image; `.dockerignore` excludes `.env`, tests, specs.
+Healthchecks hit `/health` and `/_stcore/health`. Host ports via `API_PORT` / `UI_PORT`.
+
+## 9e. Benchmarks and evaluation (`src/evals/`, `scripts/benchmark.py`, `scripts/judge_eval.py`)
+
+- Benchmark: per-agent queries through `AssistantService.chat_events` on fresh threads,
+  sequential, after one warm-up query; TTFT, latency p50/p95 (nearest rank), LLM calls and
+  cost from the usage callback; market `TTLCache` hit rate (hit/miss counters); router
+  accuracy on the labeled cases; hybrid retrieval recall@5/MRR; 20 concurrent two-turn
+  sessions with a marker-based leakage check on the saved checkpoints.
+- Structured-output contract tests (live) send every LLM schema to the OpenAI primary and the
+  Gemini fallback directly, so a provider change can't silently break routing after a
+  fallback.
+- LLM-as-judge: Gemini grades OpenAI answers (cross-family) on groundedness, citation
+  faithfulness, compliance, clarity (1-5) against reference key points **and the cited
+  passages' text**; 30 golden questions (grounded, data, safety/advice-bait).
+- Scripts rewrite only their marked sections of `docs/benchmarks.md`; the logic is in
+  `src/evals/` so it is typed and tested offline with the fake service.
 
 ## 10. Configuration
 
