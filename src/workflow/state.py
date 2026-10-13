@@ -53,3 +53,4 @@ class AgentInput(TypedDict):
     profile: UserProfile
     request_id: str
     portfolio: NotRequired[list[Holding] | None]
+    others: NotRequired[list[Intent]]  # other agents answering this turn (multi-intent)

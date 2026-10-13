@@ -35,6 +35,8 @@ _SUITABLE_DIFFICULTY = {
 }
 
 BASE_RULES = """Rules:
+- Other specialists answer other parts of the user's message (prices, news, taxes, goals,
+  portfolios). Cover only your part; never say you lack information for the other parts.
 - Answer ONLY from the numbered sources below. If they don't contain the answer, say so.
 - Cite sources inline with their numbers, like [1] or [2][3], after the sentences they support.
 - Educate; never tell the user to buy, sell, or hold a specific security.
@@ -42,6 +44,7 @@ BASE_RULES = """Rules:
 - Keep it under 200 words. Do not add a disclaimer; the system adds one."""
 
 _CITE = re.compile(r"\[(\d+)\]")
+_CITE_LIST = re.compile(r"\[(\d+(?:\s*,\s*\d+)+)\]")  # "[1, 2, 4]"
 
 
 class GroundedAgent:
@@ -117,7 +120,7 @@ class GroundedAgent:
             f"{LEVEL_STYLE[inp['profile'].knowledge_level]}\n\nSources:\n{sources}"
         )
         history = list(inp["messages"][-(self.history_messages + 1) : -1])
-        return [SystemMessage(system), *history, HumanMessage(inp["question"])]
+        return [SystemMessage(system), *history, user_turn(inp)]
 
     @staticmethod
     def _cited(answer: str, chunks: Sequence[RetrievedChunk]) -> tuple[str, list[Citation]]:
@@ -142,6 +145,32 @@ class GroundedAgent:
         return picks
 
 
+SCOPE = {
+    "qa": "general finance concepts",
+    "portfolio": "the user's portfolio",
+    "market": "current prices and trends",
+    "goals": "goal planning",
+    "news": "news headlines",
+    "tax": "tax rules",
+}
+
+
+def user_turn(inp: AgentInput) -> HumanMessage:
+    """Build the user message: the question plus what other agents cover this turn.
+
+    Without this, an agent asked "NVDA price and news?" says it has no news, while the News
+    agent beside it says it has no price.
+    """
+    others = [SCOPE[i] for i in inp.get("others", []) if i in SCOPE]
+    if not others:
+        return HumanMessage(inp["question"])
+    note = (
+        f"(Other specialists are covering: {', '.join(others)}. Answer only your part, and "
+        "don't mention those topics or say you lack information about them.)"
+    )
+    return HumanMessage(f"{inp['question']}\n\n{note}")
+
+
 def renumber_citations(
     answer: str, sources: Sequence[Citation], *, fallback: Sequence[Citation] = ()
 ) -> tuple[str, list[Citation]]:
@@ -152,6 +181,9 @@ def renumber_citations(
     reading order, so markers are rewritten to those numbers. Markers pointing at nothing are
     dropped. With no valid markers, ``fallback`` is cited and the text is unchanged.
     """
+    answer = _CITE_LIST.sub(
+        lambda m: "".join(f"[{n.strip()}]" for n in m.group(1).split(",")), answer
+    )
     cited: list[Citation] = []
     position: dict[str, int] = {}
     mapping: dict[int, int] = {}

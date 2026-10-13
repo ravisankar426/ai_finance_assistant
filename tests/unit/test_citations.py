@@ -71,3 +71,24 @@ def test_synthesizer_builds_one_global_source_list() -> None:
     assert [c.url for c in out["citations"]] == [market_only.url, shared.url, tax_only.url]
     assert "Trend [1]. Also Roth [2]." in out["final_answer"]
     assert "Roth basics [2]. Limits [3]." in out["final_answer"]  # shared source keeps [2]
+
+
+def test_comma_lists_are_expanded_then_renumbered() -> None:
+    """REQ-RAG-05: '[1, 3]' becomes separate markers mapped to the visible list."""
+    sources = [cit("a"), cit("b"), cit("c")]
+    text, cited = renumber_citations("Themes [1, 3]. More [3].", sources)
+    assert text == "Themes [1][2]. More [2]." and [c.url for c in cited] == [
+        sources[0].url,
+        sources[2].url,
+    ]
+
+
+def test_no_overview_when_nothing_was_answered() -> None:
+    """REQ-WF-10: a lone follow-up question gets no 'In short' summary of nothing."""
+    from tests.fakes import ScriptedChatModel
+
+    overview = ScriptedChatModel(reply="I don't have real-time prices.")
+    ask = AgentResult(agent="market", follow_up_question="Which stock?")
+    out = make_synthesizer(overview)({"agent_results": [ask], "question": "price?"})  # type: ignore[arg-type]
+    assert out["final_answer"] == "**Quick question:** Which stock?"
+    assert overview.calls == 0

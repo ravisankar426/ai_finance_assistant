@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 
-from src.agents.grounded import LEVEL_STYLE, renumber_citations
+from src.agents.grounded import LEVEL_STYLE, renumber_citations, user_turn
 from src.core.config import PortfolioConfig
 from src.core.llm import CONFIG_ERRORS
 from src.core.models import AgentResult, Holding
@@ -53,6 +53,8 @@ _PAIR = re.compile(r"(\d+(?:\.\d+)?)\s*(?:shares?\s+(?:of\s+)?)?\$?([A-Z]{1,5})\
 
 SYSTEM = """You are the Portfolio Analysis agent of an EDUCATIONAL personal-finance assistant.
 Rules:
+- Other specialists answer other parts of the user's message (prices, news, taxes, goals,
+  portfolios). Cover only your part; never say you lack information for the other parts.
 - Explain ONLY the facts in the PORTFOLIO block; never compute new numbers.
 - Explain what the metrics mean (weights, sector mix, HHI, volatility, max drawdown, Sharpe,
   beta) in plain terms, citing the numbered concept sources like [1].
@@ -145,7 +147,7 @@ class PortfolioAgent:
             facts=describe_analysis(analysis),
             sources=sources or "(none)",
         )
-        reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
+        reply = self.model.invoke([SystemMessage(system), user_turn(inp)])
         footer = (
             f"_Prices: {', '.join(analysis.sources)}. Metrics use past data and don't predict "
             "future results._"

@@ -110,13 +110,25 @@ _GUARANTEE = re.compile(
 _NEGATED_GUARANTEE = re.compile(
     r"\b(no|not|never|nothing|isn't|aren't|cannot|can't)\b.{0,40}\bguarantee", re.I
 )
+# Warning ABOUT guarantees ("promises of guaranteed returns are a red flag") is scam education,
+# not a promise; deleting it would remove the most important sentence of the answer.
+_WARNING_CONTEXT = re.compile(
+    r"\b(scam|fraud|red flags?|warning signs?|too good to be true|ponzi|beware|be wary|"
+    r"suspicious|skeptical)\b",
+    re.I,
+)
 
 
 def compliance_issues(text: str) -> list[str]:
     """Sentences that give personalized directives (GR-04) or promise returns (GR-07)."""
     issues = []
     for s in sentences(text):
-        if _DIRECTIVE.search(s) or (_GUARANTEE.search(s) and not _NEGATED_GUARANTEE.search(s)):
+        promise = (
+            _GUARANTEE.search(s)
+            and not _NEGATED_GUARANTEE.search(s)
+            and not _WARNING_CONTEXT.search(s)
+        )
+        if _DIRECTIVE.search(s) or promise:
             issues.append(s)
     return issues
 

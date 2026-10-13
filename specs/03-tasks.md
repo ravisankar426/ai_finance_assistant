@@ -80,7 +80,7 @@ and you can answer that day's checkpoint questions.
 | T9.4 | ✅ Dockerfile + docker-compose | NFR-06 |
 
 ## Day 10 — Fri Oct 16 · Ship
-| T10.1 | README (architecture, setup, API, usage, troubleshooting) | NFR-07 |
-| T10.2 | Technical design doc: architecture decisions, agent communication protocol, RAG details, performance considerations (from specs/02 + benchmarks) | NFR-07 |
-| T10.3 | `docs/demo_script.md` + sample conversations; **you record the 5–10 min video** | DEL-02, DEL-04 |
+| T10.1 | ✅ README (architecture, setup, API, usage, troubleshooting) | NFR-07 |
+| T10.2 | ✅ Technical design doc: architecture decisions, agent communication protocol, RAG details, performance considerations (from specs/02 + benchmarks) | NFR-07 |
+| T10.3 | ✅ `docs/demo_script.md` + sample conversations; **you record the 5–10 min video** | DEL-02, DEL-04 |
 | T10.4 | Final pass: fresh-clone setup test, interview Q&A rehearsal | — |

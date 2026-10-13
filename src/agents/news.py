@@ -10,11 +10,11 @@ from datetime import UTC, datetime
 from hashlib import sha1
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage
 from langchain_core.runnables import Runnable
 
 from src.agents.entities import TickerExtractor
-from src.agents.grounded import LEVEL_STYLE, renumber_citations
+from src.agents.grounded import LEVEL_STYLE, renumber_citations, user_turn
 from src.core.errors import AppError
 from src.core.models import AgentResult, Citation
 from src.core.news import select_headlines
@@ -28,6 +28,8 @@ MARKET_TOPIC = "stock market"
 SYSTEM = """You are the News Synthesizer agent of an EDUCATIONAL personal-finance assistant.
 You have ONLY HEADLINES (title, publisher, time) — not the articles.
 Rules:
+- Other specialists answer other parts of the user's message (prices, news, taxes, goals,
+  portfolios). Cover only your part; never say you lack information for the other parts.
 - Summarize the main themes in 3-5 short bullets. Cite headlines by number, like [2].
 - Do not invent facts, numbers, or quotes that aren't in the headlines.
 - Then add 1-2 sentences on what news like this can mean for a long-term beginner investor,
@@ -113,7 +115,7 @@ class NewsAgent:
             headlines=headlines,
             sources=concept_text or "(none)",
         )
-        reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
+        reply = self.model.invoke([SystemMessage(system), user_turn(inp)])
         headline_sources = [self._headline_citation(n) for n in selected]
         text, citations = renumber_citations(
             reply.text.strip(),

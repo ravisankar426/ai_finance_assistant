@@ -5,18 +5,19 @@ Traces to: `01-requirements.md`. Governed by: `00-constitution.md`.
 ## 1. Architecture
 
 ```
-  Streamlit UI (web_app/ui)            MCP server (mcp_server)
-          │ HTTP + SSE                         │ stdio
-          ▼                                    ▼
-  FastAPI (web_app/api) ──────► Service layer (core/services.py) ◄──────┘
-                                       │
+  Streamlit UI (web_app/ui)     REST API (web_app/api)      MCP server (web_app/mcp_server)
+     in-process calls            HTTP + SSE                  stdio (JSON-RPC)
+            └───────────────────────┼───────────────────────────┘
+                                    ▼
+                 Service layer: AssistantService (core/services.py)
+                                    │
                          LangGraph workflow (workflow/)
-   input_guard → router → [Send fan-out] → agent nodes → synthesizer → output_guard
-                                       │
-      ┌────────────────────┬───────────┴─────────┬─────────────────────┐
+   input_guard → router → [Send fan-out] → agent nodes → synthesizer → output_guard → compact
+                                    │
+      ┌────────────────────┬────────┴────────────┬─────────────────────┐
   Market data (data/)  Finance engines (core/)  RAG (rag/)        LLM gateway (core/llm.py)
-  providers, cache,    portfolio, goals, risk   FAISS + BM25      role → provider/model from config
-  rate limit, breaker  (pure Python, no LLM)    + RRF             OpenAI primary, Gemini fallback/judge
+  providers, cache,    portfolio, goals, news,  FAISS + BM25      role → provider/model from config
+  rate limit, breaker  analytics (no LLM)       + RRF             OpenAI primary, Gemini fallback/judge
 ```
 
 **Why a service layer:** the UI, REST API, and MCP server all call the same functions, so
@@ -26,23 +27,26 @@ each piece of business logic is written and tested once (REQ-API-01, REQ-MCP-01)
 
 ```
 src/
-  agents/      base.py, qa.py, portfolio.py, market.py, goals.py, news.py, tax.py
-  core/        config.py, llm.py, errors.py, models.py, services.py,
-               portfolio_engine.py, goal_engine.py, risk_profile.py, guards.py
-  data/        providers/{base,yfinance_provider,alphavantage_provider}.py,
-               market_service.py, cache.py, resilience.py (retry, rate limit, breaker),
-               knowledge_base/*.md, sample_portfolios/*.csv,
-               index/ (FAISS index + docstore, git-ignored), embedding_cache/ (git-ignored)
-  rag/         ingest.py, chunker.py, store.py, retriever.py (hybrid + RRF)
-  web_app/     api/ (FastAPI), ui/ (Streamlit tabs + charts), mcp_server/ (MCP stdio server)
-  utils/       logging.py, redaction.py, timing.py
-  workflow/    state.py, router.py, graph.py, synthesizer.py, memory.py
+  agents/      base.py (run_safely), grounded.py (RAG agent base + citation numbering), entities.py
+               (ticker extraction), qa.py, tax.py, portfolio.py, market.py, goals.py, news.py
+  core/        config.py, llm.py, errors.py, models.py, services.py, guards.py, holdings_io.py,
+               portfolio_engine.py, goal_engine.py, market_analytics.py, news.py
+  data/        providers/{base,yfinance_provider,alphavantage_provider,fixture_provider}.py,
+               market_service.py, resilience.py (cache, retry, rate limit, breaker), overview.py,
+               knowledge_base/<category>/*.md, sample_portfolios/*.csv, fixtures/market/,
+               index/ and embedding_cache/ (git-ignored, rebuilt)
+  rag/         knowledge_base.py, chunker.py, text.py, embedding_cache.py, vector_store.py,
+               index.py (load_or_build), retriever.py (hybrid + RRF)
+  evals/       benchmark.py, judge.py, report.py
+  web_app/     api/ (FastAPI), ui/ (Streamlit app, tabs, charts), mcp_server/ (MCP stdio server)
+  utils/       logging.py, redaction.py
+  workflow/    state.py, router.py, graph.py, memory.py
 tests/         unit/, integration/, evals/, fixtures/
 config.yaml  requirements.txt  README.md          ← required by the brief
 scripts/  specs/  docs/  .env.example  pyproject.toml  uv.lock  Dockerfile  docker-compose.yml  ← additions
 ```
 
-The seven `src/` folders match the brief exactly (REQ-DEL-01). The MCP server goes under `web_app/`
+The seven `src/` folders of the brief are all present (REQ-DEL-01); `evals/` is an addition. The MCP server goes under `web_app/`
 because it's another interface layer, like the API and UI; a new top-level folder would break
 the prescribed structure. The repo root folder is named `ai_finance_assistant/`, as in the brief.
 `requirements.txt` is exported from `uv.lock`, because the brief asks for one.
@@ -61,9 +65,9 @@ the prescribed structure. The repo root folder is named `ai_finance_assistant/`,
 | ADR-07 | Hybrid BM25 + vector with RRF (k=60) | Vector-only → misses exact terms like "401(k)", "wash sale" |
 | ADR-08 | yfinance primary, Alpha Vantage fallback, behind one `MarketDataProvider` interface. Measured 2026-10-07: AV free tier = 1 req/s + 25/day, throttling returned as **HTTP 200** + `Information`, OVERVIEW and full history are premium (fallback covers quotes + last 100 trading days, unadjusted) | Either alone → yfinance is unofficial and breaks without notice; AV free tier is tiny |
 | ADR-15 | Retry, rate limiter, circuit breaker, and TTL cache are small in-house classes (`data/resilience.py`) with injectable clocks | `tenacity`/`cachetools`/`pybreaker` → three dependencies for ~150 lines, and harder to make deterministic in tests; the in-house versions run instantly under a fake clock |
-| ADR-09 | In-process TTL cache (`cachetools`) behind a `Cache` protocol | Redis → extra infrastructure; can be swapped in later |
+| ADR-09 | In-process TTL cache (`data/resilience.py`, LRU-bounded, stale copies kept for fallback) | Redis → extra infrastructure for one process; the cache sits behind a small interface so it can be swapped in later |
 | ADR-10 | One `AssistantService` facade; FastAPI and Streamlit both call it (the UI in-process, so `make ui` is one process) | Streamlit-only → no API to document, logic duplicated for MCP; UI over HTTP → two processes to run and test for no functional gain |
-| ADR-11 | LangGraph `MemorySaver` in dev, `SqliteSaver` by config | Postgres → overkill for MVP |
+| ADR-11 | LangGraph `InMemorySaver` by default, `SqliteSaver` by config (`workflow.checkpointer`) | Postgres → overkill for MVP; `PostgresSaver` is a config-level swap later |
 | ADR-12 | Guards as graph nodes (regex + small-model classifier) | Prompt-only rules → not enforceable or testable |
 | ADR-13 | Lightweight Markdown specs (this folder) | Spec Kit / Kiro tooling → tooling learning curve on a 2-week schedule |
 
@@ -130,15 +134,19 @@ START → input_guard ─(blocked)→ guard_refusal ─────────�
   agent's numbers onto one global list, so `[2]` always means the second entry under Sources.
   Found by the LLM judge: answers citing chunks [1]-[4] of one article showed "Sources (1)".
 - Router guards (deterministic, after the LLM): tax terms → `tax`; follow-ups about remembered
-  holdings → `portfolio`; `[qa, goals]` with no personal goal signal (amount, time frame, "I want",
+  holdings → `portfolio` (and drop a redundant `qa`); `[qa, goals]` with no personal goal signal (amount, time frame, "I want",
   "can I", "retire at") → `qa` only, so rule-of-thumb questions aren't answered with a follow-up.
-- Synthesizer: one result → as is; several → one headed section per agent in a fixed order, plus
+- Multi-intent scope: the `Send` payload carries `others` (the other intents this turn), and
+  `user_turn()` tells each agent what the others cover, so Market doesn't say "I have no
+  news" beside the News agent. Found while recording the sample conversations.
+- Synthesizer: one result → as is (no overview when only follow-up questions came back); several → one headed section per agent in a fixed order, plus
   failure notices (REQ-WF-05). With `workflow.combined_overview`, an LLM writes a 2–3 sentence
   "**In short:**" overview on top. It is **rejected if it contains a number the agents didn't
   produce** (cheap groundedness check), so the overview can only connect, never invent.
 - `output_guard` (REQ-GR-03/04/07): `compliance_issues()` flags directives ("you should buy",
   "strong buy", "I recommend selling") and guarantees ("guaranteed returns", "risk-free way";
-  "risk-free rate" and negations are exempt). `ComplianceRewriter` asks the guard model to rephrase
+  "risk-free rate", negations, and warnings *about* guarantees — "a red flag", "scam" — are exempt,
+  so scam education isn't deleted). `ComplianceRewriter` asks the guard model to rephrase
   as education, **re-checks** the rewrite, and strips any sentence still flagged; with no model or
   an outage it strips directly. The guarantee therefore never depends on the LLM. Disclaimer is
   added except for out-of-scope and guard refusals.
@@ -325,8 +333,8 @@ stops vendor imports from appearing outside `core/llm.py`.
 - **Degraded mode (REQ-LLM-05):** a transient embeddings failure → BM25-only ranking gated by
   IDF-weighted keyword coverage (≥ 0.5), results flagged `degraded=True` and surfaced in the agent's
   `data`. Auth/permission/not-found errors (LangChain-mapped or raw HTTP 401/403/404) are re-raised.
-- **Citations:** the agent sees "[n] Title — Section (url)"; returned citations are deduplicated per
-  article.
+- **Citations:** the agent sees "[n] Title — Section (url)"; the user sees one numbered source
+  per article, and the answer's markers are renumbered to match (see §6).
 - **Evaluation (REQ-RAG-06):** `tests/evals/retrieval_set.yaml` — 40 cases (keyword, paraphrase,
   jargon, off-topic). Results (2026-10-07, `make eval`):
 
@@ -426,13 +434,14 @@ Healthchecks hit `/health` and `/_stcore/health`. Host ports via `API_PORT` / `U
 
 | Layer | Approach |
 |---|---|
-| Engines | Pure unit tests + `hypothesis` property tests (e.g. weights sum to 1) |
-| Data layer | Fake providers; `respx`/monkeypatch for HTTP; time frozen with `freezegun` |
-| Agents/graph | `GenericFakeChatModel` scripted responses; assert routing, fan-in, degradation |
-| API | FastAPI `TestClient` against a real `AssistantService` built on scripted models, recorded market data and the offline index |
+| Engines | Pure unit tests + `hypothesis` property tests (weights sum to 1, required saving lands on the target, SMA definition) |
+| Data layer | Fake providers; recorded Alpha Vantage/yfinance payloads; injectable clocks for TTLs, breaker cool-downs, quotas, backoff |
+| Agents/graph | `ScriptedChatModel` (tests/fakes.py) with scripted replies and failures; offline index with hashing embeddings; assert routing, fan-in, degradation, guards, memory |
+| API / MCP / UI | FastAPI `TestClient`, the MCP SDK's in-memory client, and Streamlit `AppTest`, all against a real `AssistantService` built on fakes and recorded market data |
 | LLM gateway | Role → model resolution from config; fallback fires when the primary fake raises; cost callback math; no vendor imports outside `core/llm.py` |
-| Evals (opt-in, `-m live`) | Real models: router accuracy, retrieval recall, disclaimer presence, structured-output contract on OpenAI and Gemini |
-| LLM-as-judge (opt-in, `-m judge`) | Gemini scores ~30 golden Q&As from 1 to 5 on groundedness (claims supported by the cited chunks), citation faithfulness, compliance (no directives, disclaimer present), and clarity for the profile's level. Scores go to `docs/benchmarks.md` |
+| Repository | Layout, setup files, no tracked secrets, coverage gate in CI, docstring rules, compose wiring, required docs sections |
+| Live (opt-in, `-m live`) | Real models: router accuracy, retrieval recall, structured-output contract on OpenAI and Gemini |
+| Benchmarks and judge (scripts) | `make bench`, `make judge` → `docs/benchmarks.md` (see §9e) |
 
 Every test docstring starts with the requirement ID(s) it verifies. `scripts/trace_matrix.py`
 lists requirements that have no test.

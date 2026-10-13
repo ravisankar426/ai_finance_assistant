@@ -9,11 +9,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import SystemMessage
 from langchain_core.runnables import Runnable
 
 from src.agents.entities import TickerExtractor
-from src.agents.grounded import LEVEL_STYLE, renumber_citations
+from src.agents.grounded import LEVEL_STYLE, renumber_citations, user_turn
 from src.core.errors import AppError
 from src.core.market_analytics import describe_snapshot, trend_snapshot
 from src.core.models import AgentResult
@@ -29,6 +29,8 @@ FOLLOW_UP = (
 
 SYSTEM = """You are the Market Analysis agent of an EDUCATIONAL personal-finance assistant.
 Rules:
+- Other specialists answer other parts of the user's message (prices, news, taxes, goals,
+  portfolios). Cover only your part; never say you lack information for the other parts.
 - Explain ONLY the facts in the MARKET DATA block. Never compute new numbers, never invent data.
 - Explain what the indicators mean in plain terms (price vs. moving averages, returns,
   52-week range, volatility). Use the numbered concept sources and cite them like [1].
@@ -123,7 +125,7 @@ class MarketAgent:
             facts="\n\n".join([*facts, *(f"NOTE: {n}" for n in notes)]),
             sources=numbered or "(none)",
         )
-        reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
+        reply = self.model.invoke([SystemMessage(system), user_turn(inp)])
         body, citations = renumber_citations(reply.text.strip(), [c.citation() for c in concepts])
         answer = body + "\n\n" + self._data_footer(sources, stale)
         return AgentResult(

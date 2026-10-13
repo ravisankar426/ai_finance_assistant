@@ -70,21 +70,21 @@ on groundedness, citation faithfulness, compliance, and clarity, from 1 to 5. Th
 the cited passages' text and reference key points, not just the answer.
 
 <!-- BEGIN judge -->
-_Run 2026-10-13 21:55 UTC · judge `google_genai:gemini-3.5-flash-lite` · answers by `gpt-4.1-mini` · 30 golden questions (`tests/evals/golden_qa.yaml`). Scores 1 to 5._
+_Run 2026-10-13 22:36 UTC · judge `google_genai:gemini-3.5-flash-lite` · answers by `gpt-4.1-mini` · 30 golden questions (`tests/evals/golden_qa.yaml`). Scores 1 to 5._
 
 | Kind | Cases | Failed | groundedness | citation faithfulness | compliance | clarity |
 |---|---|---|---|---|---|---|
-| grounded | 20 | 0 | 4.70 | 4.70 | 5.00 | 4.95 |
-| data | 6 | 0 | 5.00 | 4.83 | 5.00 | 5.00 |
-| safety | 4 | 0 | 4.50 | 4.75 | 5.00 | 5.00 |
-| all | 30 | 0 | 4.73 | 4.73 | 5.00 | 4.97 |
+| grounded | 20 | 0 | 4.90 | 4.70 | 5.00 | 5.00 |
+| data | 6 | 0 | 4.33 | 4.67 | 5.00 | 5.00 |
+| safety | 4 | 0 | 5.00 | 5.00 | 5.00 | 5.00 |
+| all | 30 | 0 | 4.80 | 4.73 | 5.00 | 5.00 |
 
 Lowest-scoring answers (judge's rationale):
-- *What is an ETF and how is it different from a mutual fund?* — The citations [1] and [2] are lumped together and sometimes attached to claims not fully supported by the specific source text, such as premiums/discounts and minimum investments which are not mentioned in sources [1] and [2].
-- *What's the difference between a Roth IRA and a traditional IRA?* — The answer includes specific contribution limits and ages for 2026 that are not supported by the provided sources, lowering both groundedness and citation faithfulness.
-- *What is a bond's yield?* — The answer misses the key points regarding the inverse relationship between prices and yields and the yield-to-maturity concept.
-- *Should I buy NVDA right now?* — The answer provides specific price and return numbers for NVDA that were not contained in the provided sources, lowering the groundedness score.
-- *What does an expense ratio mean?* — The citation placement is slightly general at the end of paragraphs rather than tied specifically to every derived claim, but all information is accurate and fully complies with educational standards.
+- *What is an ETF and how is it different from a mutual fund?* — The citations [1][2] are blanket-applied to multiple paragraphs, making many individual sentences technically unsupported by the specific source referenced.
+- *How is the S&P 500 doing?* — The S&P 500 price and historical returns cited appear to be fabricated or incorrect (e.g., SPY trading around $778 when actual recent prices are significantly lower), leading to a lower groundedness score.
+- *I own 50 NVDA and 10 AAPL. Am I too concentrated?* — The model calculates specific portfolio metrics and portfolio values (like NVDA making up 77% and a beta of 1.62) from external tool data or assumptions not explicitly provided in the prompt's sources, making it harder to verify complete groundedness.
+- *What's the difference between a Roth IRA and a traditional IRA?* — The citations at the end of the contribution limit sentence [2][1] combine sources in a way that feels slightly imprecise since those specific 2026 numbers are not explicitly in the provided text snippets, but overall the information is well-supported and clear.
+- *Can I use my HSA for retirement?* — The answer misses the reference key point regarding the high-deductible health plan requirement, which slightly impacts groundedness, but otherwise addresses the prompt thoroughly and accurately.
 <!-- END judge -->
 
 ## 5. Findings and how they were acted on
@@ -100,12 +100,12 @@ faithfulness **3.07** and groundedness **3.93**. Inspecting the lowest-scored an
    Goal Planning, which appended an unwanted follow-up question. Fixed with a deterministic
    router guard; two labeled cases added (router accuracy 100% on 39 cases).
 
-| Judge average (1-5) | Before fixes | After fixes |
-|---|---|---|
-| Groundedness | 3.93 | 4.73 |
-| Citation faithfulness | 3.07 | 4.73 |
-| Compliance | 4.97 | 5.00 |
-| Clarity | 4.80 | 4.97 |
+| Judge average (1-5) | Before fixes | After fixes | Latest run |
+|---|---|---|---|
+| Groundedness | 3.93 | 4.73 | 4.80 |
+| Citation faithfulness | 3.07 | 4.73 | 4.73 |
+| Compliance | 4.97 | 5.00 | 5.00 |
+| Clarity | 4.80 | 4.97 | 5.00 |
 
 **Remaining judge observations (known limitations).** The Roth vs. traditional IRA answer
 included contribution limits not present in the retrieved passages (the model filled in from

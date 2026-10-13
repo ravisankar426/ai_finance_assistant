@@ -141,6 +141,7 @@ def dispatch(state: GraphState) -> list[Send]:
             "profile": state["profile"],
             "request_id": state["request_id"],
             "portfolio": state.get("portfolio"),
+            "others": [i for i in state["intents"] if i not in (intent, "out_of_scope")],
         }
         node = OUT_OF_SCOPE_NODE if intent == "out_of_scope" else agent_node_name(intent)
         sends.append(Send(node, payload))
@@ -201,8 +202,8 @@ def make_synthesizer(overview_model: Runnable[Any, Any] | None) -> StateNode:
             text[id(r)] = remap_markers(r.answer, mapping)
 
         answered = [r for r in ok if r.answer]
-        if len(answered) == 1:
-            parts = [text[id(answered[0])]]
+        if len(answered) <= 1:  # one answer, or only follow-up questions: nothing to summarize
+            parts = [text[id(r)] for r in answered]
         else:
             parts = [f"**{AGENT_LABELS.get(r.agent, r.agent)}**\n\n{text[id(r)]}" for r in answered]
             overview = _overview(overview_model, state.get("question", ""), answered)

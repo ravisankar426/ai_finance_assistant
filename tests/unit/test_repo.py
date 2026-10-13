@@ -112,3 +112,53 @@ def test_mcp_documented_for_claude_desktop() -> None:
     readme = _text("README.md")
     assert '"mcpServers"' in readme and "src.web_app.mcp_server" in readme
     assert "stdio" in readme and "structured" in readme.lower()
+
+
+def test_readme_and_technical_design_cover_required_topics() -> None:
+    """REQ-NFR-07: README (architecture, setup, API, usage, troubleshooting) + design doc."""
+    readme = _text("README.md")
+    for heading in (
+        "## Architecture overview",
+        "## Setup",
+        "## Usage examples",
+        "## API documentation",
+        "## Troubleshooting",
+    ):
+        assert heading in readme, heading
+    design = _text("docs/technical_design.md")
+    for heading in (
+        "Architecture decisions",
+        "Agent communication protocol",
+        "RAG implementation",
+        "Performance considerations",
+    ):
+        assert f"## {heading}" in design or f". {heading}" in design, heading
+    # Every relative link in the README points at a file that exists.
+    for target in re.findall(r"\]\((?!https?:|#)([^)#]+)", readme):
+        assert (ROOT / target).exists(), target
+
+
+def test_demo_script_covers_the_brief() -> None:
+    """REQ-DEL-04: a 5-10 minute script covering conversations, portfolio, market, goals."""
+    demo = _text("docs/demo_script.md").lower()
+    for topic in ("multi-turn conversation", "portfolio analysis", "market data", "goal planning"):
+        assert topic in demo, topic
+    ends = [int(m) * 60 + int(s) for m, s in re.findall(r"\u2013(\d+):(\d\d)", demo)]
+    assert ends and 5 * 60 <= max(ends) <= 10 * 60
+
+
+def test_sample_conversations_are_multi_turn() -> None:
+    """REQ-DEL-02: recorded sample conversations, several turns each, covering every agent."""
+    text = _text("docs/sample_conversations.md")
+    sections = text.split("\n## ")[1:]
+    assert len(sections) >= 4
+    assert all(s.count("**You:**") >= 2 for s in sections)
+    for agent in (
+        "Finance Q&A",
+        "Portfolio Analysis",
+        "Market Analysis",
+        "Goal Planning",
+        "News Synthesizer",
+        "Tax Education",
+    ):
+        assert agent in text, agent

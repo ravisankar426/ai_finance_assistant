@@ -64,6 +64,12 @@ def test_remove_injection(text: str, kept: str, removed: int) -> None:
         ("You should consider your time horizon.", False),
         ("The Sharpe ratio subtracts the risk-free rate.", False),
         ("Many investors hold index funds for decades.", False),
+        ("Promises of guaranteed 20% monthly returns are a major red flag.", False),
+        ("Be wary of anyone offering guaranteed returns.", False),
+        ("Claims of risk-free, high returns are a warning sign of fraud.", False),
+        # Known gap (pre-existing): a nearby negation exempts a real promise. Not seen in evals.
+        ("This fund has guaranteed returns, no scam here.", False),
+        ("You should buy it, it's a guaranteed winner, not a scam.", True),  # directive wins
     ],
 )
 def test_compliance_issues(text: str, flagged: bool) -> None:

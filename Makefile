@@ -21,7 +21,7 @@ test:           ## offline tests with coverage gate
 check: lint typecheck test trace   ## everything CI runs
 
 trace:          ## requirement -> test traceability report
-	uv run python scripts/trace_matrix.py
+	uv run python scripts/trace_matrix.py --strict
 
 models:         ## live: list models + smoke-test every role (needs keys in .env)
 	uv run python scripts/check_models.py --list

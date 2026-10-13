@@ -155,3 +155,15 @@ def test_goals_guard(intents: list[str], text: str, expected: list[str]) -> None
 
     fixed, changed = apply_goals_guard(intents, text)  # type: ignore[arg-type]
     assert fixed == expected and changed == (fixed != intents)
+
+
+def test_portfolio_follow_up_drops_redundant_qa() -> None:
+    """REQ-WF-01: '[qa, portfolio]' on a remembered-portfolio follow-up -> Portfolio only."""
+    from src.workflow.router import apply_portfolio_guard
+
+    fixed, changed = apply_portfolio_guard(
+        ["qa", "portfolio"], "Is it too concentrated?", has_portfolio=True
+    )
+    assert fixed == ["portfolio"] and changed
+    kept, _ = apply_portfolio_guard(["qa", "portfolio"], "What is beta?", has_portfolio=True)
+    assert kept == ["qa", "portfolio"]  # no reference to the user's holdings

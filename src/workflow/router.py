@@ -144,10 +144,11 @@ def apply_portfolio_guard(
     Requires remembered holdings plus BOTH a reference ("it", "my") and a portfolio topic, so a
     general concept question ("what is beta?") still goes to Q&A.
     """
-    if not has_portfolio or "portfolio" in intents:
+    if not has_portfolio or not (_PORTFOLIO_REF.search(text) and _PORTFOLIO_TOPIC.search(text)):
         return intents, False
-    if not (_PORTFOLIO_REF.search(text) and _PORTFOLIO_TOPIC.search(text)):
-        return intents, False
+    if "portfolio" in intents:  # Portfolio answers it with real numbers; Q&A would duplicate
+        trimmed: list[Intent] = [i for i in intents if i != "qa"]
+        return trimmed, trimmed != intents
     fixed: list[Intent] = ["portfolio" if i in ("qa", "out_of_scope") else i for i in intents]
     if "portfolio" not in fixed:
         fixed.append("portfolio")

@@ -130,3 +130,21 @@ def test_qa_cites_each_article_once_and_reports_degraded_mode() -> None:
     assert [c.title for c in result.citations] == ["Index Funds", "ETFs"]
     assert result.data["retrieval_degraded"] is True
     assert "Index Funds — Risks" in seen_text(model)  # section shown to the model
+
+
+def test_user_turn_names_other_agents_scope() -> None:
+    """REQ-WF-02: in a multi-intent turn each agent is told what the others cover."""
+    from src.agents.grounded import user_turn
+    from src.core.models import UserProfile
+
+    base = {
+        "intent": "market",
+        "question": "NVDA price and news?",
+        "messages": [],
+        "profile": UserProfile(),
+        "request_id": "r",
+    }
+    assert user_turn(base).text == "NVDA price and news?"  # type: ignore[arg-type]
+    multi = user_turn({**base, "others": ["news"]})  # type: ignore[arg-type]
+    assert "Other specialists are covering: news headlines" in multi.text
+    assert multi.text.startswith("NVDA price and news?")

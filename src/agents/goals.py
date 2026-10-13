@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import Runnable
 from pydantic import BaseModel, Field
 
-from src.agents.grounded import LEVEL_STYLE, renumber_citations
+from src.agents.grounded import LEVEL_STYLE, renumber_citations, user_turn
 from src.core.config import PlanningConfig
 from src.core.goal_engine import describe_plan, plan_goal
 from src.core.llm import CONFIG_ERRORS
@@ -60,6 +60,8 @@ Use null for anything not stated; do not guess. Convert "by age 65, I'm 40" to y
 
 SYSTEM = """You are the Goal Planning agent of an EDUCATIONAL personal-finance assistant.
 Rules:
+- Other specialists answer other parts of the user's message (prices, news, taxes, goals,
+  portfolios). Cover only your part; never say you lack information for the other parts.
 - Explain ONLY the facts in the PLAN block; never compute new numbers.
 - Explain inflation-adjusted targets, the three return scenarios (illustrative assumptions, not
   forecasts), the required monthly saving, and whether the plan is on track.
@@ -162,7 +164,7 @@ class GoalsAgent:
             assumption_note=assumption,
             sources=sources or "(none)",
         )
-        reply = self.model.invoke([SystemMessage(system), HumanMessage(inp["question"])])
+        reply = self.model.invoke([SystemMessage(system), user_turn(inp)])
         body, citations = renumber_citations(reply.text.strip(), [c.citation() for c in concepts])
         footer = (
             "_Returns and inflation are illustrative assumptions (see config), not forecasts; "
