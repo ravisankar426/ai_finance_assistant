@@ -67,10 +67,10 @@ and you can answer that day's checkpoint questions.
 **Learn:** the advice-vs-education line (SEC/FINRA), prompt injection, SSE streaming, FastAPI dependency injection.
 
 ## Day 8 — Wed Oct 14 · Streamlit UI
-| T8.1 | App shell, tabs, sidebar profile, disclaimer, API client | UI-01, UI-07 |
-| T8.2 | Chat tab: streaming, agent badges, citations | UI-02 |
-| T8.3 | Portfolio dashboard + Market tab + Goals tab (Plotly) | UI-03..05 |
-| T8.4 | Learn tab | UI-06 |
+| T8.1 | ✅ App shell, tabs, sidebar profile, disclaimer, service client (in-process, ADR-10) | UI-01, UI-07 |
+| T8.2 | ✅ Chat tab: streaming, agent badges, citations | UI-02 |
+| T8.3 | ✅ Portfolio dashboard + Market tab + Goals tab (Plotly) | UI-03..05 |
+| T8.4 | ✅ Learn tab | UI-06 |
 
 ## Day 9 — Thu Oct 15 · Quality + bonus
 | T9.1 | Fill coverage gaps to ≥ 80%, edge cases, traceability check | NFR-01 |

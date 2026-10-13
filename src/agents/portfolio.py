@@ -117,7 +117,11 @@ class PortfolioAgent:
         updates = {"portfolio": new} if new else {}
 
         analysis = analyze_portfolio(holdings, self.market, self.config)
-        data: dict[str, Any] = {"analysis": analysis.model_dump(mode="json")}
+        data: dict[str, Any] = {
+            "analysis": analysis.model_dump(
+                mode="json", exclude={"performance"}
+            )  # keep checkpoints small
+        }
         if not analysis.holdings:
             names = ", ".join(analysis.skipped) or "those holdings"
             return AgentResult(

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Any, cast
 
 from langchain_core.messages import AIMessageChunk, HumanMessage
@@ -27,7 +27,7 @@ from src.core.market_analytics import TrendSnapshot, trend_snapshot
 from src.core.models import AGENT_LABELS, Citation, Holding, UserProfile
 from src.core.portfolio_engine import PortfolioAnalysis, analyze_portfolio
 from src.data.market_service import MarketDataService, build_market_service
-from src.data.models import PriceBar, Quote
+from src.data.models import PriceBar, PriceHistory, Quote
 from src.data.overview import MarketOverview, market_overview
 from src.rag.knowledge_base import Article, load_articles
 
@@ -147,10 +147,40 @@ class AssistantService:
             )
         return self._response(final, thread_id, request_id, usage, start)
 
+    @staticmethod
+    def _agent_token(chunk: Any) -> str:
+        """Text of an agent's streamed token; empty for the router, guards, and summaries."""
+        message, meta = chunk
+        node = str(meta.get("langgraph_node", ""))
+        if isinstance(message, AIMessageChunk) and node.startswith(AGENT_NODE_PREFIX):
+            return message.text
+        return ""
+
+    def chat_events(
+        self, req: ChatRequest, request_id: str | None = None
+    ) -> Iterator[tuple[str, Any]]:
+        """Stream for Streamlit (sync): ("token", text)..., then ("final", ChatResponse)."""
+        thread_id = req.thread_id or uuid.uuid4().hex
+        request_id = request_id or uuid.uuid4().hex[:12]
+        start = time.perf_counter()
+        final: dict[str, Any] = {}
+        with track_usage() as usage:
+            for item in self.graph.stream(
+                self._inputs(req, request_id),
+                {"configurable": {"thread_id": thread_id}},
+                stream_mode=["messages", "values"],
+            ):
+                mode, chunk = cast(tuple[str, Any], item)
+                if mode == "values":
+                    final = cast(dict[str, Any], chunk)
+                elif text := self._agent_token(chunk):
+                    yield "token", text
+        yield "final", self._response(final, thread_id, request_id, usage, start)
+
     async def chat_stream(
         self, req: ChatRequest, request_id: str | None = None
     ) -> AsyncIterator[tuple[str, Any]]:
-        """Yield ("token", text) events while agents write, then ("final", ChatResponse)."""
+        """Stream for the API's SSE endpoint (async twin of :meth:`chat_events`)."""
         thread_id = req.thread_id or uuid.uuid4().hex
         request_id = request_id or uuid.uuid4().hex[:12]
         start = time.perf_counter()
@@ -163,17 +193,10 @@ class AssistantService:
             )
             async for item in stream:
                 mode, chunk = cast(tuple[str, Any], item)
-                if mode == "messages":
-                    message, meta = chunk
-                    node = str(meta.get("langgraph_node", ""))
-                    if (
-                        isinstance(message, AIMessageChunk)
-                        and node.startswith(AGENT_NODE_PREFIX)
-                        and message.text
-                    ):
-                        yield "token", message.text
-                else:
+                if mode == "values":
                     final = cast(dict[str, Any], chunk)
+                elif text := self._agent_token(chunk):
+                    yield "token", text
         yield "final", self._response(final, thread_id, request_id, usage, start)
 
     # -- deterministic tools (also used by the UI tabs and MCP) ----------------------------------
@@ -216,6 +239,14 @@ class AssistantService:
     def risk_profile(answers: dict[str, str]) -> RiskProfile:
         """Score questionnaire answers (REQ-GP-01)."""
         return risk_profile_from_answers(answers)
+
+    def history(self, ticker: str) -> PriceHistory:
+        """Daily price history (REQ-UI-04 charts)."""
+        return self.market.get_history(ticker)
+
+    def categories(self) -> list[str]:
+        """Knowledge-base categories, sorted (REQ-UI-06)."""
+        return sorted({a.category for a in self.articles})
 
     def list_articles(self, category: str | None = None) -> list[ArticleSummary]:
         """Knowledge-base articles, optionally by category (REQ-UI-06)."""

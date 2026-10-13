@@ -95,6 +95,14 @@ class Flag(BaseModel):
     message: str
 
 
+class PerformancePoint(BaseModel):
+    """One day of the buy-and-hold series, both lines indexed to 100 at the start."""
+
+    day: date
+    portfolio: float
+    benchmark: float | None = None
+
+
 class PortfolioAnalysis(BaseModel):
     """The engine's full output; also the payload for UI charts."""
 
@@ -108,6 +116,7 @@ class PortfolioAnalysis(BaseModel):
     total_cost: float | None = None
     total_unrealized_gain: float | None = None
     flags: list[Flag] = Field(default_factory=list)
+    performance: list[PerformancePoint] = Field(default_factory=list)  # chart (REQ-UI-03)
     skipped: list[str] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
@@ -159,6 +168,24 @@ def portfolio_series(
     closes = {t: {b.day: b.close for b in h.bars} for t, h in histories.items()}
     common = sorted(set.intersection(*(set(c) for c in closes.values()))) if closes else []
     return common, [sum(quantities[t] * closes[t][d] for t in closes) for d in common]
+
+
+def performance_series(
+    days: list[date], values: list[float], bench: PriceHistory | None
+) -> list[PerformancePoint]:
+    """Portfolio and benchmark growth of 100 over the shared window (benchmark None if missing)."""
+    if not values or values[0] <= 0:
+        return []
+    closes = {b.day: b.close for b in bench.bars} if bench else {}
+    base = next((closes[d] for d in days if d in closes), None)
+    return [
+        PerformancePoint(
+            day=d,
+            portfolio=100 * v / values[0],
+            benchmark=100 * closes[d] / base if base and d in closes else None,
+        )
+        for d, v in zip(days, values, strict=True)
+    ]
 
 
 def risk_metrics(
@@ -278,6 +305,7 @@ def analyze_portfolio(
     hhi = sum(r.weight**2 for r in rows)
 
     risk = None
+    performance: list[PerformancePoint] = []
     priced = {r.ticker: r.quantity for r in rows if r.ticker in histories}
     if priced:
         days, values = portfolio_series(priced, {t: histories[t] for t in priced})
@@ -287,6 +315,7 @@ def analyze_portfolio(
         except AppError:
             notes.append(f"Benchmark {cfg.benchmark} unavailable; beta not computed.")
         risk = risk_metrics(days, values, bench, cfg.risk_free_rate)
+        performance = performance_series(days, values, bench)
         if any(not histories[t].adjusted for t in priced):
             notes.append(
                 "Some histories are unadjusted (fallback source); returns may be distorted."
@@ -314,6 +343,7 @@ def analyze_portfolio(
         total_cost=total_cost,
         total_unrealized_gain=total_gain,
         flags=_flags(rows, sectors, classes, cfg),
+        performance=performance,
         skipped=skipped,
         notes=notes,
         sources=sorted(sources),

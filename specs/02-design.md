@@ -62,7 +62,7 @@ the prescribed structure. The repo root folder is named `ai_finance_assistant/`,
 | ADR-08 | yfinance primary, Alpha Vantage fallback, behind one `MarketDataProvider` interface. Measured 2026-10-07: AV free tier = 1 req/s + 25/day, throttling returned as **HTTP 200** + `Information`, OVERVIEW and full history are premium (fallback covers quotes + last 100 trading days, unadjusted) | Either alone → yfinance is unofficial and breaks without notice; AV free tier is tiny |
 | ADR-15 | Retry, rate limiter, circuit breaker, and TTL cache are small in-house classes (`data/resilience.py`) with injectable clocks | `tenacity`/`cachetools`/`pybreaker` → three dependencies for ~150 lines, and harder to make deterministic in tests; the in-house versions run instantly under a fake clock |
 | ADR-09 | In-process TTL cache (`cachetools`) behind a `Cache` protocol | Redis → extra infrastructure; can be swapped in later |
-| ADR-10 | FastAPI service + Streamlit client | Streamlit-only → no API to document, logic duplicated for MCP |
+| ADR-10 | One `AssistantService` facade; FastAPI and Streamlit both call it (the UI in-process, so `make ui` is one process) | Streamlit-only → no API to document, logic duplicated for MCP; UI over HTTP → two processes to run and test for no functional gain |
 | ADR-11 | LangGraph `MemorySaver` in dev, `SqliteSaver` by config | Postgres → overkill for MVP |
 | ADR-12 | Guards as graph nodes (regex + small-model classifier) | Prompt-only rules → not enforceable or testable |
 | ADR-13 | Lightweight Markdown specs (this folder) | Spec Kit / Kiro tooling → tooling learning curve on a 2-week schedule |
@@ -351,6 +351,26 @@ status (invalid ticker 404, unavailable data/LLM/KB 503) with the user-safe mess
 `ModelError` → 503; anything else → 500 `"Internal error."` with no internals. Once an SSE stream
 has started the status is already sent, so failures arrive in-band as an `error` event. Every
 response carries `X-Request-ID` (generated or propagated), bound into the logs.
+
+## 9b. Streamlit UI (`web_app/ui/`)
+
+`app.py` is the shell (title, disclaimer above the tabs so it shows on every tab, sidebar
+profile, Chat tab); `tabs.py` holds Portfolio, Market, Goals, Learn; `charts.py` holds pure
+Plotly builders (data in, figure out) so every chart is unit-tested without Streamlit.
+
+| Tab | Shows | Service calls |
+|---|---|---|
+| Chat | streamed tokens, "Answered by" badges, expandable sources, learn-next links | `chat_events` (sync twin of the SSE stream) |
+| Portfolio | editable holdings table / CSV upload / samples → 8 metric cards, flags, asset-class donut, sector bars, growth-of-100 vs SPY, holdings table | `analyze_portfolio` |
+| Market | index metrics, sector heatmap (diverging around 0), ticker chart with 50/200-day SMAs, as-of + source, refresh | `overview`, `trend`, `history` |
+| Goals | risk quiz → form → pessimistic–optimistic band, base path, target line, gap levers, illustrative mix | `risk_profile`, `plan_goal` |
+| Learn | category filter + title search over the 60 articles | `categories`, `list_articles` |
+
+Analyzed holdings are sent with chat requests, so "how diversified is my portfolio?" works
+without retyping. The engine adds `performance` (growth of 100) to `PortfolioAnalysis` for the
+chart; the Portfolio agent excludes it from its checkpointed data. Refresh relies on the market
+cache: data is re-fetched only after its TTL expires (REQ-UI-04). Streamlit columns stack on
+narrow screens (REQ-UI-07). Tests drive the real page with `AppTest` and a fake service.
 
 ## 10. Configuration
 

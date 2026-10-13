@@ -144,7 +144,9 @@ markupsafe==3.0.4
 multitasking==0.0.13
     # via yfinance
 narwhals==2.26.0
-    # via altair
+    # via
+    #   altair
+    #   plotly
 numpy==2.5.3
     # via
     #   ai-finance-assistant
@@ -170,6 +172,7 @@ packaging==26.3
     #   faiss-cpu
     #   langchain-core
     #   langsmith
+    #   plotly
     #   streamlit
 pandas==3.0.6
     # via
@@ -181,6 +184,8 @@ pillow==12.3.0
     # via streamlit
 platformdirs==4.12.3
     # via yfinance
+plotly==7.1.0
+    # via ai-finance-assistant
 protobuf==7.36.2
     # via
     #   streamlit

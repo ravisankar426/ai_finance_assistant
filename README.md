@@ -14,7 +14,7 @@ make install                  # uv sync + pre-commit hooks
 cp .env.example .env          # add OPENAI_API_KEY, GOOGLE_API_KEY, ALPHAVANTAGE_API_KEY
 make models                   # live: list models your keys can use + smoke-test every role
 make check                    # lint + types + tests (coverage gate 80%) + traceability
-make ui                       # Streamlit app at http://localhost:8501
+make ui                       # Streamlit app at http://localhost:8501 (Chat, Portfolio, Market, Goals, Learn)
 make chat                     # chat in the terminal (live models)
 make api                      # REST API at http://localhost:8000/docs (SSE chat + tools)
 ```
