@@ -29,6 +29,3 @@ src/data/embedding_cache/
 .DS_Store
 .vscode/
 .idea/
-
-# exclude specs folder
-specs/
