@@ -53,7 +53,7 @@ Section 7 (Future Directions) is out of scope by agreement.
 | 5. [Optional] MCP tools / Claude Desktop / protocol docs | MCP-01, MCP-02 |
 
 ## §4 Learning Goals
-Not system requirements. Covered by the daily concept walkthroughs in `03-tasks.md`.
+Not system requirements; no requirement maps to this section.
 
 ## §5 Submission Guidelines
 

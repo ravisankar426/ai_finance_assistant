@@ -69,7 +69,7 @@ the prescribed structure. The repo root folder is named `ai_finance_assistant/`,
 | ADR-10 | One `AssistantService` facade; FastAPI and Streamlit both call it (the UI in-process, so `make ui` is one process) | Streamlit-only → no API to document, logic duplicated for MCP; UI over HTTP → two processes to run and test for no functional gain |
 | ADR-11 | LangGraph `InMemorySaver` by default, `SqliteSaver` by config (`workflow.checkpointer`) | Postgres → overkill for MVP; `PostgresSaver` is a config-level swap later |
 | ADR-12 | Guards as graph nodes (regex + small-model classifier) | Prompt-only rules → not enforceable or testable |
-| ADR-13 | Lightweight Markdown specs (this folder) | Spec Kit / Kiro tooling → tooling learning curve on a 2-week schedule |
+| ADR-13 | Lightweight Markdown specs (this folder) | Spec Kit / Kiro tooling → extra tool setup on a 2-week schedule |
 
 ## 4. Core data models (Pydantic, `core/models.py`)
 
