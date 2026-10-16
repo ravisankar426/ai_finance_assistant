@@ -13,7 +13,7 @@ curated knowledge base or computed by deterministic code, and every source cited
 | **Interfaces** | Streamlit app (5 tabs) · REST API with streaming · MCP server for Claude Desktop |
 | **Quality** | 428 tests, 97% coverage, every requirement traced to a test · live evals and an LLM judge |
 | **Performance** | first token in ~1.1 s (p50), full answer 2.5–6 s, under $0.001 per question |
-| **Docs** | [Technical design](docs/technical_design.md) · [Benchmarks](docs/benchmarks.md) · [Sample conversations](docs/sample_conversations.md) · [Demo script](docs/demo_script.md) · [Specs](specs/) |
+| **Docs** | [Technical design](docs/technical_design.md) · [Benchmarks](docs/benchmarks.md) · [Sample conversations](docs/sample_conversations.md) · [Specs](specs/) |
 
 **Contents:** [Features](#features) · [Architecture](#architecture-overview) ·
 [Setup](#setup) · [Usage](#usage-examples) · [API](#api-documentation) ·
@@ -339,7 +339,7 @@ ai_finance_assistant/
 │   └── evals/       benchmark and LLM-judge logic
 ├── tests/           unit/, integration/, evals/ (eval sets), fixtures/
 ├── scripts/         CLI tools: chat, index, eval, benchmark, judge, market checks, recorders
-├── docs/            technical design, benchmarks, sample conversations, demo script
+├── docs/            technical design, benchmarks, sample conversations
 ├── specs/           constitution, requirements, design, task plan, traceability
 ├── config.yaml  requirements.txt  pyproject.toml  uv.lock  .env.example
 └── Dockerfile  docker-compose.yml

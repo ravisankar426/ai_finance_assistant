@@ -177,4 +177,4 @@ Every ID below must be referenced by at least one test (constitution P5).
 | REQ-DEL-01 | M | The codebase shall follow the prescribed layout: `src/{agents,core,data,rag,web_app,utils,workflow}`, `tests/`, `config.yaml`, `requirements.txt`, `README.md` at the repo root. |
 | REQ-DEL-02 | M | The repo shall ship sample data for testing: sample portfolios (CSV), recorded market-data fixtures, and sample conversations. |
 | REQ-DEL-03 | M | The repo shall ship environment setup files: `.env.example`, `pyproject.toml` + `uv.lock`, exported `requirements.txt`. |
-| REQ-DEL-04 | M | A 5–10 minute demo video shall show: multi-turn conversations with different agents, a portfolio analysis, market data integration, and a goal-planning example. A demo script in `docs/demo_script.md` covers each item. |
+| REQ-DEL-04 | M | A 5–10 minute demo video shall show: multi-turn conversations with different agents, a portfolio analysis, market data integration, and a goal-planning example. A demo script covering each item is kept locally (`docs/demo_script.md`, not version-controlled). |

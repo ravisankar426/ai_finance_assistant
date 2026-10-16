@@ -29,3 +29,6 @@ src/data/embedding_cache/
 .DS_Store
 .vscode/
 .idea/
+
+# Kept locally, not version-controlled
+docs/demo_script.md
