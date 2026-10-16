@@ -105,10 +105,21 @@ def test_goal_projection_band_and_target() -> None:
 def test_holdings_table_round_trip_and_validation() -> None:
     """REQ-UI-03, REQ-PF-01: edited rows use the CSV parser; blank rows are ignored."""
     df = holdings_frame("ticker,quantity\naapl,10\nMSFT,-1\n")
-    assert list(df.columns) == ["ticker", "quantity", "cost_basis"]
+    assert list(df.columns) == ["ticker", "quantity", "cost_basis", "purchase_date"]
     df = pd.concat([df, pd.DataFrame([{"ticker": None, "quantity": None}])], ignore_index=True)
     holdings, errors = frame_to_holdings(df)
     assert [h.ticker for h in holdings] == ["AAPL"] and len(errors) == 1
+
+
+def test_holdings_table_keeps_purchase_dates() -> None:
+    """REQ-UI-03, REQ-PF-01: dates survive the table round trip; a bad date is reported."""
+    from datetime import date
+
+    df = holdings_frame("ticker,quantity,purchase_date\nNVDA,5,2025-12-01\nAAPL,1,12/01/2025\n")
+    assert df.loc[0, "purchase_date"] == "2025-12-01"  # text, so typos stay visible
+    holdings, errors = frame_to_holdings(df)
+    assert holdings[0].purchase_date == date(2025, 12, 1)
+    assert errors == ["Row 3 (AAPL): purchase date must look like 2026-01-15."]
 
 
 def test_samples_are_bundled() -> None:

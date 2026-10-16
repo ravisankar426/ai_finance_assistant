@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 AgentName = Literal["qa", "portfolio", "market", "goals", "news", "tax"]
 Intent = Literal["qa", "portfolio", "market", "goals", "news", "tax", "out_of_scope"]
@@ -52,6 +53,18 @@ class Holding(BaseModel):
     ticker: str
     quantity: float = Field(gt=0)
     cost_basis: float | None = Field(default=None, gt=0, description="Price paid per share")
+    purchase_date: date | None = Field(
+        default=None,
+        description="Day bought (YYYY-MM-DD). If cost_basis is blank, that day's closing price "
+        "is used as the cost basis.",
+    )
+
+    @field_validator("purchase_date")
+    @classmethod
+    def _not_in_future(cls, value: date | None) -> date | None:
+        if value is not None and value > date.today():
+            raise ValueError("purchase date can't be in the future")
+        return value
 
 
 class UserProfile(BaseModel):

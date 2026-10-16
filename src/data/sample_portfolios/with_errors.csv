@@ -1,5 +1,7 @@
-ticker,quantity,cost_basis
-AAPL,10,150
+ticker,quantity,purchase_date
+AAPL,10,2026-01-15
 ZZQXW,5,
-MSFT,abc,300
+MSFT,abc,2026-02-17
 VTI,-2,
+JNJ,3,2099-01-01
+QQQ,2,15/01/2026

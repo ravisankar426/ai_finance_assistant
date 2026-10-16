@@ -95,6 +95,8 @@ def test_portfolio_tab_analyzes_sample(fake: None) -> None:
     assert any("Growth of 100 vs SPY" in t for t in titles)
     assert any("⚠" in (w.icon or "") or "%" in w.value for w in at.warning)  # concentration flags
     assert [h.ticker for h in at.session_state.portfolio][:2] == ["NVDA", "AAPL"]
+    table = at.dataframe[-1].value  # holdings table: cost from each purchase date's close
+    assert table.loc[table["Ticker"] == "NVDA", "Cost from"].item() == "close 2025-12-01"
 
 
 def test_portfolio_shared_with_chat(fake: None) -> None:

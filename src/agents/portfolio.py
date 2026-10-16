@@ -32,10 +32,26 @@ FOLLOW_UP = (
 )
 
 
+class StatedHolding(BaseModel):
+    """A position as the LLM extracts it from chat.
+
+    No purchase date: the model doesn't know today's date, so "bought last March" could get
+    the wrong year. Dates come from the Portfolio tab, CSV, or API instead.
+    """
+
+    ticker: str
+    quantity: float = Field(gt=0)
+    cost_basis: float | None = Field(default=None, gt=0, description="Price paid per share")
+
+    def to_holding(self) -> Holding:
+        """Convert to the domain model."""
+        return Holding(ticker=self.ticker, quantity=self.quantity, cost_basis=self.cost_basis)
+
+
 class HoldingsRequest(BaseModel):
     """Holdings stated in the user's message."""
 
-    holdings: list[Holding] = Field(
+    holdings: list[StatedHolding] = Field(
         default_factory=list,
         description="Positions the user says they own: ticker (map names like Apple -> AAPL), "
         "share quantity, and cost_basis = price paid PER SHARE if stated.",
@@ -102,7 +118,7 @@ class PortfolioAgent:
             req: HoldingsRequest = self.extractor.invoke(
                 [SystemMessage(EXTRACT_PROMPT), HumanMessage(text)]
             )
-            return req.holdings
+            return [h.to_holding() for h in req.holdings]
         except CONFIG_ERRORS:
             raise
         except Exception as exc:

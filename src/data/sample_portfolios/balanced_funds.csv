@@ -1,5 +1,5 @@
-ticker,quantity,cost_basis
-VTI,60,220
-BND,120,72
-QQQ,8,350
-JNJ,10,155
+ticker,quantity,purchase_date
+VTI,60,2025-12-01
+BND,120,2025-12-01
+QQQ,8,2026-03-07
+JNJ,10,2026-05-11

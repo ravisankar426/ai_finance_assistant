@@ -24,7 +24,7 @@ from src.core.config import PortfolioConfig
 from src.core.errors import AppError
 from src.core.models import Holding
 from src.data.market_service import MarketDataService
-from src.data.models import AssetProfile, PriceHistory
+from src.data.models import AssetProfile, PriceBar, PriceHistory
 
 AssetClass = Literal["Stocks", "Bonds", "Cash", "Other"]
 
@@ -67,6 +67,7 @@ class HoldingRow(BaseModel):
     asset_class: AssetClass
     sector: str
     cost_basis: float | None = None
+    cost_basis_date: date | None = None  # trading day whose close became the cost basis
     unrealized_gain: float | None = None
     unrealized_gain_pct: float | None = None
     stale: bool = False
@@ -218,6 +219,48 @@ def risk_metrics(
     )
 
 
+def close_on_or_before(history: PriceHistory, day: date) -> PriceBar | None:
+    """Return the last trading day's bar on or before ``day`` (weekends/holidays roll back)."""
+    earlier = [b for b in history.bars if b.day <= day]
+    return max(earlier, key=lambda b: b.day) if earlier else None
+
+
+def _historical_cost_basis(
+    holdings: Sequence[Holding], market: MarketDataService, notes: list[str]
+) -> tuple[list[Holding], dict[str, date]]:
+    """Fill a blank cost basis from the closing price on the purchase date.
+
+    An entered cost basis always wins. Returns the updated holdings and, per ticker, the
+    trading day whose close was used (shown in the UI so the number can be checked).
+    """
+    out: list[Holding] = []
+    used: dict[str, date] = {}
+    for h in holdings:
+        if h.purchase_date is None or h.cost_basis is not None:
+            out.append(h)
+            continue
+        t = h.ticker.strip().upper().lstrip("$")
+        try:
+            bar = close_on_or_before(market.get_history(t), h.purchase_date)
+        except AppError:
+            bar = None  # the ticker itself is reported later (skipped or no history)
+        if bar is None:
+            notes.append(
+                f"No closing price for {t} on or before {h.purchase_date}; its gain isn't shown "
+                "(price history covers about the last 13 months)."
+            )
+            out.append(h)
+            continue
+        out.append(h.model_copy(update={"cost_basis": bar.close}))
+        used[t] = bar.day
+    if used:
+        notes.append(
+            "Cost basis for holdings entered with a purchase date is that day's closing price "
+            "(adjusted for splits and dividends)."
+        )
+    return out, used
+
+
 # --- main entry point -------------------------------------------------------------------------
 
 
@@ -225,8 +268,10 @@ def analyze_portfolio(
     holdings: Sequence[Holding], market: MarketDataService, cfg: PortfolioConfig
 ) -> PortfolioAnalysis:
     """Price, measure, and flag a portfolio. Tickers without data are skipped, not fatal."""
+    notes: list[str] = []
+    holdings, cost_dates = _historical_cost_basis(holdings[: cfg.max_holdings], market, notes)
     merged: dict[str, Holding] = {}
-    for h in holdings[: cfg.max_holdings]:
+    for h in holdings:
         t = h.ticker.strip().upper().lstrip("$")
         if t in merged:  # same ticker twice: add quantities; cost basis becomes weighted
             prev = merged[t]
@@ -241,7 +286,6 @@ def analyze_portfolio(
     rows: list[HoldingRow] = []
     histories: dict[str, PriceHistory] = {}
     skipped: list[str] = []
-    notes: list[str] = []
     sources: set[str] = set()
     for t, h in merged.items():
         try:
@@ -272,6 +316,7 @@ def analyze_portfolio(
                 asset_class=cls,
                 sector=sector_label(profile, cls),
                 cost_basis=h.cost_basis,
+                cost_basis_date=cost_dates.get(t),
                 unrealized_gain=gain,
                 unrealized_gain_pct=(quote.price / h.cost_basis - 1) if h.cost_basis else None,
                 stale=quote.stale,

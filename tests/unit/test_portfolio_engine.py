@@ -182,3 +182,89 @@ def test_weights_and_hhi_invariants(values: list[float]) -> None:
 def test_daily_returns_skip_zero() -> None:
     """REQ-PF-02: no division by zero on bad data."""
     assert daily_returns([0, 10, 11]) == [pytest.approx(0.1)]
+
+
+# --- cost basis from the purchase date ------------------------------------------------------
+
+
+def _close(market: MarketDataService, ticker: str, day: str) -> float:
+    from datetime import date
+
+    return next(
+        b.close for b in market.get_history(ticker).bars if b.day == date.fromisoformat(day)
+    )
+
+
+def test_cost_basis_from_purchase_date(market: MarketDataService) -> None:
+    """REQ-PF-02: a purchase date with no price uses that day's real closing price."""
+    from datetime import date
+
+    a = analyze_portfolio(
+        [Holding(ticker="NVDA", quantity=10, purchase_date=date(2025, 12, 1))], market, CFG
+    )
+    row = a.holdings[0]
+    paid = _close(market, "NVDA", "2025-12-01")
+    assert row.cost_basis == pytest.approx(paid) and row.cost_basis_date == date(2025, 12, 1)
+    assert row.unrealized_gain == pytest.approx((row.price - paid) * 10)
+    assert any("that day's closing price" in n for n in a.notes)
+
+
+def test_weekend_purchase_uses_previous_trading_day(market: MarketDataService) -> None:
+    """REQ-PF-02: Saturday 2026-03-07 -> Friday 2026-03-06's close."""
+    from datetime import date
+
+    a = analyze_portfolio(
+        [Holding(ticker="QQQ", quantity=1, purchase_date=date(2026, 3, 7))], market, CFG
+    )
+    assert a.holdings[0].cost_basis_date == date(2026, 3, 6)
+    assert a.holdings[0].cost_basis == pytest.approx(_close(market, "QQQ", "2026-03-06"))
+
+
+def test_entered_cost_basis_wins_over_date(market: MarketDataService) -> None:
+    """REQ-PF-02: an explicit price paid is never overwritten by the historical close."""
+    from datetime import date
+
+    a = analyze_portfolio(
+        [Holding(ticker="AAPL", quantity=1, cost_basis=150, purchase_date=date(2026, 1, 15))],
+        market,
+        CFG,
+    )
+    assert a.holdings[0].cost_basis == 150 and a.holdings[0].cost_basis_date is None
+
+
+def test_purchase_before_history_is_explained_not_guessed(market: MarketDataService) -> None:
+    """REQ-PF-02: a date older than the price history leaves the gain blank, with a note."""
+    from datetime import date
+
+    a = analyze_portfolio(
+        [Holding(ticker="AAPL", quantity=1, purchase_date=date(2020, 1, 2))], market, CFG
+    )
+    assert a.holdings[0].cost_basis is None and a.holdings[0].unrealized_gain is None
+    assert any("No closing price for AAPL on or before 2020-01-02" in n for n in a.notes)
+
+
+def test_two_dated_lots_are_cost_weighted(market: MarketDataService) -> None:
+    """REQ-PF-02: two purchases of one ticker merge with a quantity-weighted cost."""
+    from datetime import date
+
+    a = analyze_portfolio(
+        [
+            Holding(ticker="AAPL", quantity=10, purchase_date=date(2026, 1, 15)),
+            Holding(ticker="AAPL", quantity=30, purchase_date=date(2026, 6, 15)),
+        ],
+        market,
+        CFG,
+    )
+    c1, c2 = _close(market, "AAPL", "2026-01-15"), _close(market, "AAPL", "2026-06-15")
+    assert a.holdings[0].quantity == 40
+    assert a.holdings[0].cost_basis == pytest.approx((10 * c1 + 30 * c2) / 40)
+
+
+def test_future_purchase_date_rejected() -> None:
+    """REQ-PF-01: a purchase date after today is invalid input."""
+    from datetime import date, timedelta
+
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="future"):
+        Holding(ticker="AAPL", quantity=1, purchase_date=date.today() + timedelta(days=1))

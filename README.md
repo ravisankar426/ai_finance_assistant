@@ -28,7 +28,7 @@ curated knowledge base or computed by deterministic code, and every source cited
 | Agent | Ask it… | What it does |
 |---|---|---|
 | **Finance Q&A** | "What is an index fund?" | Answers from 60 curated articles (SEC, IRS, FINRA, CFPB…) with numbered citations, adapted to beginner/intermediate/advanced, and suggests what to learn next |
-| **Portfolio Analysis** | "Analyze 20 VTI, 15 AAPL, 10 NVDA, 30 BND" | Computes weights, asset classes, sectors, concentration (HHI), volatility, max drawdown, Sharpe, beta vs SPY, gains; flags concentration; remembers the holdings for follow-ups |
+| **Portfolio Analysis** | "Analyze 20 VTI, 15 AAPL, 10 NVDA, 30 BND" | Computes weights, asset classes, sectors, concentration (HHI), volatility, max drawdown, Sharpe, beta vs SPY, gains (from the price you paid, or the real closing price on the date you bought); flags concentration; remembers the holdings for follow-ups |
 | **Market Analysis** | "How is the S&P 500 doing?" | Live quotes and history → moving averages, returns, 52-week range, volatility, trend; index and sector overview; always shows source and freshness |
 | **Goal Planning** | "$60k for a house in 5 years" | Inflation-adjusted target, required monthly saving under pessimistic/base/optimistic returns, ways to close a gap, illustrative allocation; asks for missing inputs and your risk tolerance |
 | **News Synthesizer** | "Any news on Nvidia?" | Recent headlines, ranked and de-duplicated, summarized with links; no predictions |
@@ -169,7 +169,7 @@ Start with `make api`. Interactive OpenAPI docs: **http://localhost:8000/docs**.
 |---|---|---|---|
 | `POST` | `/chat` | `ChatRequest` | **Server-Sent Events**: `token` events, then `final` (a `ChatResponse`) |
 | `POST` | `/chat/sync` | `ChatRequest` | `ChatResponse` |
-| `POST` | `/portfolio/analyze` | `{"holdings": [{"ticker", "quantity", "cost_basis"?}]}` | Metrics, allocations, flags, performance series |
+| `POST` | `/portfolio/analyze` | `{"holdings": [{"ticker", "quantity", "cost_basis"?, "purchase_date"?}]}` | Metrics, allocations, flags, performance series |
 | `GET` | `/market/quote/{ticker}` | — | Price, change, source, freshness |
 | `GET` | `/market/trend/{ticker}` | — | Moving averages, returns, volatility, trend + daily bars |
 | `GET` | `/market/overview` | — | 4 index ETFs + 11 sector ETFs |
@@ -345,7 +345,8 @@ ai_finance_assistant/
 └── Dockerfile  docker-compose.yml
 ```
 
-Sample data: portfolios in `src/data/sample_portfolios/` (including one with errors), recorded
+Sample data: portfolios in `src/data/sample_portfolios/` (shares and purchase dates; the cost
+basis is each date's real closing price; one file has deliberate errors), recorded
 market data for 26 tickers in `src/data/fixtures/market/`, and recorded conversations in
 [`docs/sample_conversations.md`](docs/sample_conversations.md).
 

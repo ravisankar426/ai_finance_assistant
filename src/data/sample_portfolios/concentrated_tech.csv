@@ -1,5 +1,5 @@
-ticker,quantity,cost_basis
-NVDA,100,
-AAPL,50,150
-MSFT,10,320
-TSLA,15,210
+ticker,quantity,purchase_date
+NVDA,100,2025-12-01
+AAPL,50,2026-02-17
+MSFT,10,2026-04-01
+TSLA,15,2026-06-15

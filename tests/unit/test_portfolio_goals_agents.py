@@ -63,7 +63,10 @@ def test_sample_portfolios_parse() -> None:
     assert good["concentrated_tech.csv"][0][0].ticker == "NVDA"
     assert good["balanced_funds.csv"][1] == []
     holdings, errors = good["with_errors.csv"]
-    assert [h.ticker for h in holdings] == ["AAPL", "ZZQXW"] and len(errors) == 2
+    assert [h.ticker for h in holdings] == ["AAPL", "ZZQXW"] and len(errors) == 4
+    assert any("in the future" in e for e in errors)
+    assert any("look like 2026-01-15" in e for e in errors)
+    assert all(h.purchase_date for h in good["concentrated_tech.csv"][0])
 
 
 @pytest.mark.parametrize(
@@ -98,7 +101,8 @@ def _portfolio_agent(
     reply: str = "Your portfolio is concentrated [1].",
 ) -> tuple[PortfolioAgent, ScriptedChatModel]:
     model = ScriptedChatModel(reply=reply)
-    extractor = _structured(HoldingsRequest, holdings=holdings or [])
+    stated = [h.model_dump(exclude={"purchase_date"}) for h in holdings or []]
+    extractor = _structured(HoldingsRequest, holdings=stated)
     return PortfolioAgent(model, extractor, market, offline_retriever(), PortfolioConfig()), model
 
 

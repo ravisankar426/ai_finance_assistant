@@ -66,7 +66,8 @@ to show the answer style change.
 1. Select the sample **`concentrated_tech`** → **Analyze portfolio**.
    - Point at: the 8 metric cards (total value, gain, effective holdings, volatility, max
      drawdown, Sharpe, **beta vs SPY**); the ⚠️ concentration warnings; the asset-class donut;
-     sector bars; **growth of 100 vs SPY**; the holdings table; the price source caption.
+     sector bars; **growth of 100 vs SPY**; the holdings table — **"Cost from: close 2025-12-01"**
+     shows each gain uses the real closing price on the purchase date; the price source caption.
    - **Say:** "All of these numbers are computed by a deterministic engine — the model only
      explains them."
 2. Edit the table: add a row `BND` with `40` shares → **Analyze** again. Point at the warning

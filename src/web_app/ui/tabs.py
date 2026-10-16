@@ -26,7 +26,7 @@ from src.core.services import AssistantService, GoalPlanRequest
 from src.web_app.ui import charts
 
 SAMPLES_DIR = PROJECT_ROOT / "src" / "data" / "sample_portfolios"
-HOLDING_COLUMNS = ["ticker", "quantity", "cost_basis"]
+HOLDING_COLUMNS = ["ticker", "quantity", "cost_basis", "purchase_date"]
 RISK_PROFILES: list[RiskProfile] = list(get_args(RiskProfile))
 
 
@@ -64,7 +64,7 @@ def sample_path(name: str) -> Path:
 
 def holdings_frame(csv_text: str) -> pd.DataFrame:
     """Editable table from CSV text (invalid rows are kept so the user can fix them)."""
-    df = pd.read_csv(StringIO(csv_text), dtype={"ticker": str})
+    df = pd.read_csv(StringIO(csv_text), dtype={"ticker": str, "purchase_date": str})
     for col in HOLDING_COLUMNS:
         if col not in df:
             df[col] = None
@@ -106,8 +106,10 @@ def portfolio_tab(service: AssistantService) -> None:
     """Render holdings entry (table or CSV), metric cards, allocation charts, and performance."""
     st.subheader("Analyze a portfolio")
     st.caption(
-        "Enter holdings in the table, upload a CSV (`ticker,quantity,cost_basis`), or start "
-        "from a sample. Analyzed holdings are also shared with the Chat tab."
+        "Enter holdings in the table, upload a CSV (`ticker,quantity,cost_basis,purchase_date`), "
+        "or start from a sample. Give either the price you paid or the date you bought: a date "
+        "uses that day's closing price as your cost. Analyzed holdings are also shared with "
+        "the Chat tab."
     )
     left, right = st.columns(2)
     sample = left.selectbox("Start from a sample", sample_names(), key="pf_sample")
@@ -121,7 +123,15 @@ def portfolio_tab(service: AssistantService) -> None:
         column_config={
             "ticker": st.column_config.TextColumn("Ticker", required=True),
             "quantity": st.column_config.NumberColumn("Shares", min_value=0.0),
-            "cost_basis": st.column_config.NumberColumn("Cost / share ($)", min_value=0.0),
+            "cost_basis": st.column_config.NumberColumn(
+                "Cost / share ($)", min_value=0.0, help="Optional: the price you paid per share"
+            ),
+            "purchase_date": st.column_config.TextColumn(
+                "Bought on",
+                help="Optional, YYYY-MM-DD. If Cost / share is blank, that day's closing price "
+                "is used.",
+                validate=r"^\d{4}-\d{2}-\d{2}$",
+            ),
         },
     )
     if st.button("Analyze portfolio", type="primary", key="pf_analyze"):
@@ -168,6 +178,12 @@ def render_analysis(a: PortfolioAnalysis, benchmark: str) -> None:
                 "Value": h.value,
                 "Weight": h.weight,
                 "Sector": h.sector,
+                "Paid / share": h.cost_basis,
+                "Cost from": (
+                    f"close {h.cost_basis_date}"
+                    if h.cost_basis_date
+                    else ("entered" if h.cost_basis is not None else "")
+                ),
                 "Gain %": h.unrealized_gain_pct,
             }
             for h in a.holdings
@@ -177,6 +193,7 @@ def render_analysis(a: PortfolioAnalysis, benchmark: str) -> None:
         column_config={
             "Price": st.column_config.NumberColumn(format="$%.2f"),
             "Value": st.column_config.NumberColumn(format="$%.0f"),
+            "Paid / share": st.column_config.NumberColumn(format="$%.2f"),
             "Weight": st.column_config.NumberColumn(format="percent"),
             "Gain %": st.column_config.NumberColumn(format="percent"),
         },
