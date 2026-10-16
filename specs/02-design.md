@@ -386,7 +386,9 @@ Analyzed holdings are sent with chat requests, so "how diversified is my portfol
 without retyping. The engine adds `performance` (growth of 100) to `PortfolioAnalysis` for the
 chart; the Portfolio agent excludes it from its checkpointed data. Refresh relies on the market
 cache: data is re-fetched only after its TTL expires (REQ-UI-04). Streamlit columns stack on
-narrow screens (REQ-UI-07). Tests drive the real page with `AppTest` and a fake service.
+narrow screens (REQ-UI-07). Tabs are lazy (`st.tabs(..., on_change="rerun")` + `tab.open`): only the
+open tab's code runs, so a chat rerun doesn't fetch the Market tab's 15 quotes. Tests drive the
+real page with `AppTest` and a fake service.
 
 ## 9c. MCP server (`web_app/mcp_server/`)
 

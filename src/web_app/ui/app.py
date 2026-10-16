@@ -23,6 +23,8 @@ from src.core.services import AssistantService, ChatRequest, ChatResponse
 from src.utils.logging import configure_logging, request_context
 from src.web_app.ui import tabs
 
+TAB_LABELS = ["💬 Chat", "📊 Portfolio", "📈 Market", "🎯 Goals", "📚 Learn"]
+TAB_KEY = "active_tab"
 LEVELS = ["beginner", "intermediate", "advanced"]
 RISK_CHOICES = ["not set", *tabs.RISK_PROFILES]
 
@@ -164,19 +166,24 @@ def main() -> None:
     st.caption(DISCLAIMER)  # above the tabs -> visible on every tab (REQ-UI-07)
     profile, status = sidebar()
     service = load_service_or_stop()
-    chat, portfolio, market, goals, learn = st.tabs(
-        ["💬 Chat", "📊 Portfolio", "📈 Market", "🎯 Goals", "📚 Learn"]
-    )
-    with chat:
-        chat_tab(service, profile)
-    with portfolio:
-        tabs.portfolio_tab(service)
-    with market:
-        tabs.market_tab(service)
-    with goals:
-        tabs.goals_tab(service)
-    with learn:
-        tabs.learn_tab(service)
+    # Lazy tabs: only the open tab's code runs. Otherwise every rerun (each chat answer
+    # included) would also fetch the Market tab's 15 quotes for a tab nobody is looking at.
+    chat, portfolio, market, goals, learn = st.tabs(TAB_LABELS, key=TAB_KEY, on_change="rerun")
+    if chat.open:
+        with chat:
+            chat_tab(service, profile)
+    if portfolio.open:
+        with portfolio:
+            tabs.portfolio_tab(service)
+    if market.open:
+        with market:
+            tabs.market_tab(service)
+    if goals.open:
+        with goals:
+            tabs.goals_tab(service)
+    if learn.open:
+        with learn:
+            tabs.learn_tab(service)
     if st.session_state.get("portfolio"):  # may have just been set by the Portfolio tab
         n = len(st.session_state.portfolio)
         status.caption(f"Portfolio shared with chat: {n} holdings")

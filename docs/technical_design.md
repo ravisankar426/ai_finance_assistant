@@ -312,7 +312,8 @@ advice-bait questions.
 ## 10. Interfaces: UI, REST API, MCP
 
 **Streamlit UI** — five tabs; the disclaimer sits above them so it shows on every tab;
-columns stack on narrow screens.
+columns stack on narrow screens. Tabs are lazy: only the open tab's code runs, so chatting
+never triggers the Market tab's data fetches.
 - *Chat*: streamed answer, "Answered by" badges, numbered sources, learn-next links.
 - *Portfolio*: editable table / CSV / samples → 8 metric cards, flags, asset-class donut,
   sector bars, growth of 100 vs SPY, holdings table. Analyzed holdings are shared with Chat.
