@@ -90,6 +90,10 @@ class YFinanceProvider:
         """Latest close (live price during market hours) vs. the previous close."""
         t = self.ticker_factory(ticker)
         hist = self._call(lambda: t.history(period="5d", interval="1d", auto_adjust=True))
+        if hist is not None and not hist.empty:
+            # After the close Yahoo can return today's row with volume but no prices (NaN);
+            # use the latest row that has a close, as get_history does.
+            hist = hist[hist["Close"].notna()]
         if hist is None or hist.empty:
             raise NoDataError(f"no recent prices for {ticker}")
         last = hist.iloc[-1]

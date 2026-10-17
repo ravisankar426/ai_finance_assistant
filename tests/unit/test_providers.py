@@ -161,6 +161,20 @@ def test_yf_quote_from_recent_history() -> None:
     assert q.volume == 1000 and q.currency == "USD"
 
 
+def test_yf_quote_skips_todays_unpriced_row() -> None:
+    """REQ-MK-01, REQ-MD-07: after the close Yahoo can send today's row with no prices.
+
+    Observed 2026-10-16: the last daily row had volume but NaN prices, so every quote showed
+    "nan". The quote must use the latest row that has a close, dated to that day.
+    """
+    q = _yf(FakeTicker(_frame([100.0, 110.0, float("nan")]))).get_quote("SPY")
+    assert (q.price, q.previous_close) == (110.0, 100.0)
+    assert q.change_pct == pytest.approx(10.0)
+    assert q.market_date.isoformat() == "2026-10-06"  # type: ignore[union-attr]
+    with pytest.raises(NoDataError):
+        _yf(FakeTicker(_frame([float("nan"), float("nan")]))).get_quote("SPY")
+
+
 def test_yf_history_adjusted_and_skips_nan() -> None:
     """REQ-MK-02: adjusted closes, NaN rows dropped."""
     h = _yf(FakeTicker(_frame([1.0, float("nan"), 3.0]))).get_history("AAPL", 30)
