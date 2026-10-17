@@ -32,3 +32,6 @@ src/data/embedding_cache/
 
 # Kept locally, not version-controlled
 docs/demo_script.md
+
+# exclude screen_recordings
+screen_recordings/
